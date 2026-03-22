@@ -67,6 +67,7 @@ const DEFAULT_CATEGORIES: StudyCategory[] = [
     color: '142 25% 36%',
     trackByLines: true,
     structure: 'gemara',
+    subcategories: GEMARA_STRUCTURE,
   },
   {
     id: 'mishnayos',
