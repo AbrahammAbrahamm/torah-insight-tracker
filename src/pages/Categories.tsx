@@ -21,6 +21,7 @@ export default function Categories() {
   const { categories, addCategory, updateCategory, removeCategory } = useCategories();
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+  const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: '',
     icon: '📚',
