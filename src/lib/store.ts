@@ -35,6 +35,7 @@ export interface StudyCategory {
   color: string; // HSL string
   trackByLines: boolean;
   structure?: 'gemara' | 'tanach' | 'custom';
+  subcategories?: SubCategory[];
 }
 
 export interface StudyGoal {
