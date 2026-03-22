@@ -1,5 +1,8 @@
 // Local storage based store for Torah learning data
 import { useState, useEffect, useCallback } from 'react';
+import { SubCategory, GEMARA_STRUCTURE } from './category-structures';
+
+export type { SubCategory } from './category-structures';
 
 export interface LearningComponent {
   id: string;
