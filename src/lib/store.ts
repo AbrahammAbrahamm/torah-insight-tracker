@@ -1,5 +1,8 @@
 // Local storage based store for Torah learning data
 import { useState, useEffect, useCallback } from 'react';
+import { SubCategory, GEMARA_STRUCTURE } from './category-structures';
+
+export type { SubCategory } from './category-structures';
 
 export interface LearningComponent {
   id: string;
@@ -32,6 +35,7 @@ export interface StudyCategory {
   color: string; // HSL string
   trackByLines: boolean;
   structure?: 'gemara' | 'tanach' | 'custom';
+  subcategories?: SubCategory[];
 }
 
 export interface StudyGoal {
@@ -63,6 +67,7 @@ const DEFAULT_CATEGORIES: StudyCategory[] = [
     color: '142 25% 36%',
     trackByLines: true,
     structure: 'gemara',
+    subcategories: GEMARA_STRUCTURE,
   },
   {
     id: 'mishnayos',

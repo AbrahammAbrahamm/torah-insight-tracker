@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useCategories, StudyCategory } from '@/lib/store';
-import { Plus, Pencil, Trash2, X, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Check, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SubCategoryBrowser } from '@/components/SubCategoryBrowser';
 
 const ICONS = ['📜', '📖', '📕', '📗', '📘', '📙', '⚖️', '🕯️', '✡️', '🔖', '📚', '🎓'];
 const UNIT_TYPES = ['daf', 'amud', 'perek', 'pasuk', 'siman', 'halacha', 'minutes', 'pages', 'custom'];
@@ -20,6 +21,7 @@ export default function Categories() {
   const { categories, addCategory, updateCategory, removeCategory } = useCategories();
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+  const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: '',
     icon: '📚',
@@ -187,32 +189,58 @@ export default function Categories() {
 
       <div className="space-y-2">
         {categories.map(cat => (
-          <motion.div
-            key={cat.id}
-            layout
-            className="bg-card border rounded-xl p-4 flex items-center gap-3"
-          >
-            <span className="text-2xl">{cat.icon}</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold">{cat.name}</p>
-              <p className="text-xs text-muted-foreground">
-                {cat.unitType} · {cat.defaultComponents.join(', ')}
-              </p>
-              {cat.structure !== 'custom' && (
-                <span className="inline-block mt-1 text-[10px] font-medium px-2 py-0.5 bg-secondary rounded-full text-secondary-foreground">
-                  {cat.structure}
-                </span>
+          <div key={cat.id}>
+            <motion.div
+              layout
+              className="bg-card border rounded-xl p-4 flex items-center gap-3"
+            >
+              <span className="text-2xl">{cat.icon}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold">{cat.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {cat.unitType} · {cat.defaultComponents.join(', ')}
+                </p>
+                {cat.structure !== 'custom' && (
+                  <span className="inline-block mt-1 text-[10px] font-medium px-2 py-0.5 bg-secondary rounded-full text-secondary-foreground">
+                    {cat.structure}
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-1">
+                {cat.subcategories && cat.subcategories.length > 0 && (
+                  <button
+                    onClick={() => setExpandedCat(expandedCat === cat.id ? null : cat.id)}
+                    className="p-2 rounded-lg hover:bg-secondary transition-colors"
+                  >
+                    <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${expandedCat === cat.id ? 'rotate-90' : ''}`} />
+                  </button>
+                )}
+                <button onClick={() => startEdit(cat)} className="p-2 rounded-lg hover:bg-secondary transition-colors">
+                  <Pencil className="w-4 h-4 text-muted-foreground" />
+                </button>
+                <button onClick={() => removeCategory(cat.id)} className="p-2 rounded-lg hover:bg-destructive/10 transition-colors">
+                  <Trash2 className="w-4 h-4 text-destructive" />
+                </button>
+              </div>
+            </motion.div>
+
+            <AnimatePresence>
+              {expandedCat === cat.id && cat.subcategories && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="overflow-hidden mt-2"
+                >
+                  <SubCategoryBrowser
+                    subcategories={cat.subcategories}
+                    categoryName={cat.name}
+                  />
+                </motion.div>
               )}
-            </div>
-            <div className="flex gap-1">
-              <button onClick={() => startEdit(cat)} className="p-2 rounded-lg hover:bg-secondary transition-colors">
-                <Pencil className="w-4 h-4 text-muted-foreground" />
-              </button>
-              <button onClick={() => removeCategory(cat.id)} className="p-2 rounded-lg hover:bg-destructive/10 transition-colors">
-                <Trash2 className="w-4 h-4 text-destructive" />
-              </button>
-            </div>
-          </motion.div>
+            </AnimatePresence>
+          </div>
         ))}
       </div>
     </div>
