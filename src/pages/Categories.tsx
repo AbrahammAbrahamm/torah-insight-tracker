@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useCategories, StudyCategory } from '@/lib/store';
-import { Plus, Pencil, Trash2, X, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Check, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SubCategoryBrowser } from '@/components/SubCategoryBrowser';
 
 const ICONS = ['📜', '📖', '📕', '📗', '📘', '📙', '⚖️', '🕯️', '✡️', '🔖', '📚', '🎓'];
 const UNIT_TYPES = ['daf', 'amud', 'perek', 'pasuk', 'siman', 'halacha', 'minutes', 'pages', 'custom'];
