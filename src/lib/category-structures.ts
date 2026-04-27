@@ -24,6 +24,29 @@ function numberToHebrew(n: number): string {
   return `Daf ${n}`;
 }
 
+// Generate perek list (1..count), each with pasuk children
+function generatePerakim(count: number, pasukimPerPerek?: number[]): SubCategory[] {
+  const perakim: SubCategory[] = [];
+  for (let i = 1; i <= count; i++) {
+    const pasukCount = pasukimPerPerek?.[i - 1];
+    const node: SubCategory = { id: `perek-${i}`, name: `Perek ${i}`, totalUnits: pasukCount };
+    if (pasukCount && pasukCount > 0) {
+      const pesukim: SubCategory[] = [];
+      for (let p = 1; p <= pasukCount; p++) {
+        pesukim.push({ id: `pasuk-${i}-${p}`, name: `Pasuk ${p}`, totalUnits: 1 });
+      }
+      node.children = pesukim;
+    }
+    perakim.push(node);
+  }
+  return perakim;
+}
+
+// Generate simple perek list without pasuk breakdown
+function generatePerakimSimple(count: number): SubCategory[] {
+  return generatePerakim(count);
+}
+
 // Complete Bavli Gemara structure: Seder → Masechta → Daf
 export const GEMARA_STRUCTURE: SubCategory[] = [
   {
