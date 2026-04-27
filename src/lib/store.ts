@@ -114,6 +114,7 @@ const DEFAULT_CATEGORIES: StudyCategory[] = [
     color: '280 30% 45%',
     trackByLines: false,
     structure: 'custom',
+    subcategories: HALACHA_STRUCTURE,
   },
   {
     id: 'tanach',
@@ -124,6 +125,7 @@ const DEFAULT_CATEGORIES: StudyCategory[] = [
     color: '38 70% 50%',
     trackByLines: false,
     structure: 'tanach',
+    subcategories: TANACH_STRUCTURE,
   },
 ];
 
@@ -150,7 +152,7 @@ function saveToStorage<T>(key: string, value: T): void {
 
 export function useCategories() {
   const [categories, setCategories] = useState<StudyCategory[]>(() =>
-    loadFromStorage('torahTracker_categories', DEFAULT_CATEGORIES)
+    loadFromStorage<StudyCategory[]>('torahTracker_categories', DEFAULT_CATEGORIES).map(withDefaultSubcategories)
   );
 
   useEffect(() => {
