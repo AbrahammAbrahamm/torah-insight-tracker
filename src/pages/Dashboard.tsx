@@ -1,4 +1,3 @@
-import { PageHeader } from '@/components/layout/PageHeader';
 import { useEntries, useCategories, useGoals, computeStreak, getTodayEntries, getCategoryStats } from '@/lib/store';
 import { Flame, BookOpen, CheckCircle2, TrendingUp, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
