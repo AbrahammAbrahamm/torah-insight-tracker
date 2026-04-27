@@ -1,5 +1,5 @@
 import { useEntries, useCategories, useGoals, computeStreak, getTodayEntries, getCategoryStats } from '@/lib/store';
-import { Flame, BookOpen, CheckCircle2, TrendingUp, Plus } from 'lucide-react';
+import { Flame, BookOpen, CheckCircle2, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
