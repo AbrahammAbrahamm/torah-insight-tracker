@@ -4,7 +4,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { BottomNav } from "@/components/layout/BottomNav";
-import Dashboard from "./pages/Dashboard";
 import Categories from "./pages/Categories";
 import LogEntry from "./pages/LogEntry";
 import Analytics from "./pages/Analytics";
@@ -20,7 +19,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<Categories />} />
           <Route path="/categories" element={<Categories />} />
           <Route path="/log" element={<LogEntry />} />
           <Route path="/analytics" element={<Analytics />} />
