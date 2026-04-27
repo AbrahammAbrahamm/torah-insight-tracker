@@ -108,7 +108,6 @@ export default function Dashboard() {
                     {stats.totalUnits} units · {stats.learnedComponents} components learned
                   </p>
                 </div>
-                <span className="text-xs font-medium text-muted-foreground">{cat.unitType}</span>
               </button>
             );
           })}
