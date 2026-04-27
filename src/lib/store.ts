@@ -1,8 +1,22 @@
 // Local storage based store for Torah learning data
 import { useState, useEffect, useCallback } from 'react';
-import { SubCategory, GEMARA_STRUCTURE } from './category-structures';
+import { SubCategory, GEMARA_STRUCTURE, TANACH_STRUCTURE, CHUMASH_STRUCTURE, MISHNAYOS_STRUCTURE, HALACHA_STRUCTURE } from './category-structures';
 
 export type { SubCategory } from './category-structures';
+
+// Attach default subcategory tree based on the category's id/structure when missing.
+function withDefaultSubcategories(cat: StudyCategory): StudyCategory {
+  if (cat.subcategories && cat.subcategories.length > 0) return cat;
+  let subs: SubCategory[] | undefined;
+  if (cat.id === 'gemara') subs = GEMARA_STRUCTURE;
+  else if (cat.id === 'mishnayos') subs = MISHNAYOS_STRUCTURE;
+  else if (cat.id === 'chumash') subs = CHUMASH_STRUCTURE;
+  else if (cat.id === 'tanach') subs = TANACH_STRUCTURE;
+  else if (cat.id === 'halacha') subs = HALACHA_STRUCTURE;
+  else if (cat.structure === 'gemara') subs = GEMARA_STRUCTURE;
+  else if (cat.structure === 'tanach') subs = TANACH_STRUCTURE;
+  return subs ? { ...cat, subcategories: subs } : cat;
+}
 
 export interface LearningComponent {
   id: string;
@@ -78,6 +92,7 @@ const DEFAULT_CATEGORIES: StudyCategory[] = [
     color: '210 40% 45%',
     trackByLines: false,
     structure: 'custom',
+    subcategories: MISHNAYOS_STRUCTURE,
   },
   {
     id: 'chumash',
@@ -88,6 +103,7 @@ const DEFAULT_CATEGORIES: StudyCategory[] = [
     color: '25 60% 52%',
     trackByLines: false,
     structure: 'tanach',
+    subcategories: CHUMASH_STRUCTURE,
   },
   {
     id: 'halacha',
