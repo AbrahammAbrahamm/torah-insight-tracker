@@ -3,7 +3,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { useCategories, useEntries, LearningComponent, LearningEntry } from '@/lib/store';
 import { Check, Plus, Minus, Clock, BookOpen, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 function generateId() {
@@ -14,9 +14,13 @@ export default function LogEntry() {
   const { categories } = useCategories();
   const { addEntry } = useEntries();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  const [categoryId, setCategoryId] = useState(categories[0]?.id || '');
-  const [unit, setUnit] = useState('');
+  const prefillCategory = searchParams.get('category');
+  const prefillUnit = searchParams.get('unit');
+
+  const [categoryId, setCategoryId] = useState(prefillCategory || categories[0]?.id || '');
+  const [unit, setUnit] = useState(prefillUnit || '');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [components, setComponents] = useState<LearningComponent[]>([]);
   const [newComponent, setNewComponent] = useState('');
