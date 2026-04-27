@@ -192,7 +192,22 @@ export default function Categories() {
           <div key={cat.id}>
             <motion.div
               layout
-              className="bg-card border rounded-xl p-4 flex items-center gap-3"
+              role={cat.subcategories && cat.subcategories.length > 0 ? 'button' : undefined}
+              tabIndex={cat.subcategories && cat.subcategories.length > 0 ? 0 : undefined}
+              onClick={() => {
+                if (cat.subcategories && cat.subcategories.length > 0) {
+                  setExpandedCat(expandedCat === cat.id ? null : cat.id);
+                }
+              }}
+              onKeyDown={(e) => {
+                if ((e.key === 'Enter' || e.key === ' ') && cat.subcategories && cat.subcategories.length > 0) {
+                  e.preventDefault();
+                  setExpandedCat(expandedCat === cat.id ? null : cat.id);
+                }
+              }}
+              className={`bg-card border rounded-xl p-4 flex items-center gap-3 transition-colors ${
+                cat.subcategories && cat.subcategories.length > 0 ? 'cursor-pointer hover:bg-secondary/40' : ''
+              }`}
             >
               <span className="text-2xl">{cat.icon}</span>
               <div className="flex-1 min-w-0">
@@ -206,11 +221,12 @@ export default function Categories() {
                   </span>
                 )}
               </div>
-              <div className="flex gap-1">
+              <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                 {cat.subcategories && cat.subcategories.length > 0 && (
                   <button
                     onClick={() => setExpandedCat(expandedCat === cat.id ? null : cat.id)}
                     className="p-2 rounded-lg hover:bg-secondary transition-colors"
+                    aria-label="Toggle structure"
                   >
                     <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${expandedCat === cat.id ? 'rotate-90' : ''}`} />
                   </button>
@@ -236,6 +252,7 @@ export default function Categories() {
                   <SubCategoryBrowser
                     subcategories={cat.subcategories}
                     categoryName={cat.name}
+                    categoryId={cat.id}
                   />
                 </motion.div>
               )}
