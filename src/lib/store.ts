@@ -5,15 +5,22 @@ import { SubCategory, GEMARA_STRUCTURE, TANACH_STRUCTURE, CHUMASH_STRUCTURE, MIS
 export type { SubCategory } from './category-structures';
 
 // Attach default subcategory tree based on the category's id/structure when missing.
+// For known built-in categories, always refresh from the canonical structure so
+// users get updates (e.g. new Mishna level) without clearing localStorage.
+const BUILTIN_STRUCTURES: Record<string, SubCategory[]> = {
+  gemara: GEMARA_STRUCTURE,
+  mishnayos: MISHNAYOS_STRUCTURE,
+  chumash: CHUMASH_STRUCTURE,
+  tanach: TANACH_STRUCTURE,
+  halacha: HALACHA_STRUCTURE,
+};
+
 function withDefaultSubcategories(cat: StudyCategory): StudyCategory {
+  const builtin = BUILTIN_STRUCTURES[cat.id];
+  if (builtin) return { ...cat, subcategories: builtin };
   if (cat.subcategories && cat.subcategories.length > 0) return cat;
   let subs: SubCategory[] | undefined;
-  if (cat.id === 'gemara') subs = GEMARA_STRUCTURE;
-  else if (cat.id === 'mishnayos') subs = MISHNAYOS_STRUCTURE;
-  else if (cat.id === 'chumash') subs = CHUMASH_STRUCTURE;
-  else if (cat.id === 'tanach') subs = TANACH_STRUCTURE;
-  else if (cat.id === 'halacha') subs = HALACHA_STRUCTURE;
-  else if (cat.structure === 'gemara') subs = GEMARA_STRUCTURE;
+  if (cat.structure === 'gemara') subs = GEMARA_STRUCTURE;
   else if (cat.structure === 'tanach') subs = TANACH_STRUCTURE;
   return subs ? { ...cat, subcategories: subs } : cat;
 }
