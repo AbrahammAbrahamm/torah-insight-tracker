@@ -1,5 +1,5 @@
 import { useEntries, useCategories, useGoals, computeStreak, getTodayEntries, getCategoryStats } from '@/lib/store';
-import { Flame, BookOpen, CheckCircle2, TrendingUp, Plus } from 'lucide-react';
+import { Flame, BookOpen, CheckCircle2, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
@@ -35,15 +35,6 @@ export default function Dashboard() {
 
   return (
     <div className="pb-24 px-4 pt-6 max-w-lg mx-auto">
-      {/* Log button */}
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={() => navigate('/log')}
-          className="flex items-center gap-1.5 text-sm font-medium text-primary bg-primary/10 rounded-full px-4 py-2"
-        >
-          <Plus className="w-4 h-4" /> Log
-        </button>
-      </div>
 
       {/* Stats Row */}
       <motion.div className="grid grid-cols-3 gap-3 mb-6" {...fadeIn}>

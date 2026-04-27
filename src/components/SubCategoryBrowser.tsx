@@ -3,7 +3,7 @@ import { SubCategory } from '@/lib/category-structures';
 import { ChevronRight, ChevronDown, BookOpen, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useEntries } from '@/lib/store';
+import { useEntries, LearningEntry } from '@/lib/store';
 
 interface SubCategoryBrowserProps {
   subcategories: SubCategory[];
@@ -11,32 +11,69 @@ interface SubCategoryBrowserProps {
   categoryId: string;
 }
 
-function isLeafCompleted(entries: Array<{ categoryId: string; unit: string }>, categoryId: string, unitLabel: string) {
-  const needle = unitLabel.toLowerCase();
-  return entries.some(e => e.categoryId === categoryId && e.unit.toLowerCase().includes(needle));
-}
-
-function countCompletedLeaves(node: SubCategory, categoryId: string, parentPath: string[], entries: Array<{ categoryId: string; unit: string }>): { done: number; total: number } {
-  if (!node.children || node.children.length === 0) {
-    const label = [...parentPath, node.name].join(' ');
-    return { done: isLeafCompleted(entries, categoryId, buildUnitLabel(parentPath, node)) ? 1 : 0, total: 1 };
-  }
-  let done = 0, total = 0;
-  for (const child of node.children) {
-    const sub = countCompletedLeaves(child, categoryId, [...parentPath, node.name], entries);
-    done += sub.done;
-    total += sub.total;
-  }
-  return { done, total };
-}
-
-// Build a human label like "Bava Metzia Daf 2a"
+// Build a human label like "Bava Metzia Daf 2a" from path + node
 function buildUnitLabel(parentPath: string[], node: SubCategory): string {
-  // parentPath includes seder + masechta names typically. Use last meaningful parent (masechta) + node name.
   const masechta = parentPath[parentPath.length - 1] || '';
-  // Strip "(Amud Aleph)" type suffix from node.name to keep it short
   const cleanName = node.name.replace(/\s*\(.*\)\s*$/, '');
   return `${masechta} ${cleanName}`.trim();
+}
+
+// Returns a fraction 0..1 of how complete a leaf unit is, based on logged entries.
+function getLeafProgress(entries: LearningEntry[], categoryId: string, unitLabel: string): number {
+  const needle = unitLabel.toLowerCase();
+  const matches = entries.filter(
+    e => e.categoryId === categoryId && e.unit.toLowerCase().includes(needle)
+  );
+  if (matches.length === 0) return 0;
+  let best = 0;
+  for (const e of matches) {
+    if (e.components.length === 0) {
+      best = Math.max(best, 1);
+    } else {
+      const learned = e.components.filter(c => c.learned).length;
+      best = Math.max(best, learned / e.components.length);
+    }
+  }
+  return best;
+}
+
+// Aggregate progress: average of leaf fractions under this node
+function getNodeProgress(
+  node: SubCategory,
+  categoryId: string,
+  parentPath: string[],
+  entries: LearningEntry[]
+): { fraction: number; leafCount: number; completedLeaves: number } {
+  if (!node.children || node.children.length === 0) {
+    const label = buildUnitLabel(parentPath, node);
+    const frac = getLeafProgress(entries, categoryId, label);
+    return { fraction: frac, leafCount: 1, completedLeaves: frac >= 0.999 ? 1 : 0 };
+  }
+  let totalFrac = 0;
+  let leafCount = 0;
+  let completed = 0;
+  for (const child of node.children) {
+    const sub = getNodeProgress(child, categoryId, [...parentPath, node.name], entries);
+    totalFrac += sub.fraction * sub.leafCount;
+    leafCount += sub.leafCount;
+    completed += sub.completedLeaves;
+  }
+  return {
+    fraction: leafCount > 0 ? totalFrac / leafCount : 0,
+    leafCount,
+    completedLeaves: completed,
+  };
+}
+
+function ProgressBar({ value, tone }: { value: number; tone: 'success' | 'primary' | 'muted' }) {
+  const pct = Math.round(value * 100);
+  const fillClass =
+    tone === 'success' ? 'bg-success' : tone === 'primary' ? 'bg-primary' : 'bg-muted-foreground/30';
+  return (
+    <div className="w-16 h-1.5 bg-secondary rounded-full overflow-hidden shrink-0" aria-label={`${pct}% complete`}>
+      <div className={`h-full ${fillClass} rounded-full transition-all`} style={{ width: `${pct}%` }} />
+    </div>
+  );
 }
 
 function SubCategoryNode({
@@ -51,7 +88,7 @@ function SubCategoryNode({
   depth?: number;
   path?: string[];
   categoryId: string;
-  entries: Array<{ categoryId: string; unit: string }>;
+  entries: LearningEntry[];
   onLogLeaf: (unitLabel: string) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -59,9 +96,10 @@ function SubCategoryNode({
   const currentPath = [...path, node.name];
 
   const leafLabel = !hasChildren ? buildUnitLabel(path, node) : '';
-  const leafDone = !hasChildren && isLeafCompleted(entries, categoryId, leafLabel);
-
-  const progress = hasChildren ? countCompletedLeaves(node, categoryId, path, entries) : null;
+  const progress = getNodeProgress(node, categoryId, path, entries);
+  const pct = Math.round(progress.fraction * 100);
+  const tone: 'success' | 'primary' | 'muted' =
+    pct >= 100 ? 'success' : pct > 0 ? 'primary' : 'muted';
 
   const handleClick = () => {
     if (hasChildren) {
@@ -77,7 +115,7 @@ function SubCategoryNode({
         onClick={handleClick}
         className={`w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors rounded-lg hover:bg-secondary/60 ${
           depth === 0 ? 'font-semibold text-sm' : depth === 1 ? 'font-medium text-sm' : 'text-xs text-muted-foreground'
-        } ${leafDone ? 'text-success' : ''}`}
+        }`}
         style={{ paddingLeft: `${depth * 16 + 12}px` }}
       >
         {hasChildren ? (
@@ -86,28 +124,21 @@ function SubCategoryNode({
           ) : (
             <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
           )
-        ) : leafDone ? (
+        ) : pct >= 100 ? (
           <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
         ) : (
           <BookOpen className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
         )}
-        <span className="flex-1 truncate">{node.name}</span>
-        {progress && progress.total > 0 && (
-          <span className={`text-[10px] shrink-0 rounded-full px-2 py-0.5 ${
-            progress.done === progress.total
-              ? 'bg-success/15 text-success'
-              : progress.done > 0
-                ? 'bg-primary/10 text-primary'
-                : 'bg-secondary text-muted-foreground'
-          }`}>
-            {progress.done}/{progress.total}
-          </span>
-        )}
-        {!hasChildren && node.totalUnits !== undefined && !leafDone && (
-          <span className="text-[10px] text-muted-foreground bg-secondary rounded-full px-2 py-0.5 shrink-0">
-            log
-          </span>
-        )}
+        <span className={`flex-1 truncate ${pct >= 100 ? 'text-success' : ''}`}>{node.name}</span>
+
+        <ProgressBar value={progress.fraction} tone={tone} />
+        <span
+          className={`text-[10px] tabular-nums shrink-0 w-8 text-right ${
+            tone === 'success' ? 'text-success' : tone === 'primary' ? 'text-primary' : 'text-muted-foreground'
+          }`}
+        >
+          {pct}%
+        </span>
       </button>
 
       <AnimatePresence>
