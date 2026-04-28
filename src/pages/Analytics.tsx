@@ -116,6 +116,19 @@ export default function Analytics() {
   );
   const uniqueDays = new Set(filteredEntries.map(e => e.date)).size;
 
+  // Closest to completion: leaves with progress > 0 and < 1, sorted desc
+  const closestToCompletion = useMemo(() => {
+    const out: LeafProgress[] = [];
+    for (const cat of categories) {
+      if (!cat.subcategories || cat.subcategories.length === 0) continue;
+      collectLeaves(cat.subcategories, [], cat.id, cat.name, cat.icon, entries, out);
+    }
+    return out
+      .filter(l => l.fraction > 0 && l.fraction < 1)
+      .sort((a, b) => b.fraction - a.fraction)
+      .slice(0, 8);
+  }, [categories, entries]);
+
   return (
     <div className="pb-24 px-4 pt-6 max-w-lg mx-auto">
       <PageHeader title="Analytics" subtitle="Your learning insights" />
