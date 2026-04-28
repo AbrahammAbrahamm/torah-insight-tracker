@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts';
 import { Flame, Calendar, BookOpen, RotateCcw, Target } from 'lucide-react';
 import { useState, useMemo } from 'react';
+import { useI18n } from '@/lib/i18n';
 
 const CHART_COLORS = [
   'hsl(142, 25%, 36%)',
@@ -72,6 +73,7 @@ export default function Analytics() {
   const { entries } = useEntries();
   const { categories } = useCategories();
   const [range, setRange] = useState<TimeRange>('30d');
+  const { t, tn } = useI18n();
 
   const streak = computeStreak(entries);
 
