@@ -1,9 +1,10 @@
 import { PageHeader } from '@/components/layout/PageHeader';
-import { useEntries, useCategories, computeStreak, getCategoryStats } from '@/lib/store';
+import { useEntries, useCategories, computeStreak, getCategoryStats, LearningEntry } from '@/lib/store';
+import { SubCategory } from '@/lib/category-structures';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts';
-import { Flame, Calendar, BookOpen, RotateCcw } from 'lucide-react';
-import { useState } from 'react';
+import { Flame, Calendar, BookOpen, RotateCcw, Target } from 'lucide-react';
+import { useState, useMemo } from 'react';
 
 const CHART_COLORS = [
   'hsl(142, 25%, 36%)',
