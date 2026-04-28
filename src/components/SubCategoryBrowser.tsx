@@ -4,6 +4,7 @@ import { ChevronRight, ChevronDown, BookOpen, CheckCircle2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useEntries, LearningEntry } from '@/lib/store';
+import { useI18n } from '@/lib/i18n';
 
 interface SubCategoryBrowserProps {
   subcategories: SubCategory[];
@@ -92,6 +93,7 @@ function SubCategoryNode({
   onLogLeaf: (unitLabel: string) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const { tn } = useI18n();
   const hasChildren = node.children && node.children.length > 0;
   const currentPath = [...path, node.name];
 
@@ -129,7 +131,7 @@ function SubCategoryNode({
         ) : (
           <BookOpen className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
         )}
-        <span className={`flex-1 truncate ${pct >= 100 ? 'text-success' : ''}`}>{node.name}</span>
+        <span className={`flex-1 truncate ${pct >= 100 ? 'text-success' : ''}`}>{tn(node.name)}</span>
 
         <ProgressBar value={progress.fraction} tone={tone} />
         <span
@@ -171,6 +173,7 @@ function SubCategoryNode({
 export function SubCategoryBrowser({ subcategories, categoryName, categoryId }: SubCategoryBrowserProps) {
   const navigate = useNavigate();
   const { entries } = useEntries();
+  const { t, tn } = useI18n();
 
   const handleLogLeaf = (unitLabel: string) => {
     const params = new URLSearchParams({ category: categoryId, unit: unitLabel });
@@ -181,9 +184,9 @@ export function SubCategoryBrowser({ subcategories, categoryName, categoryId }: 
     <div className="bg-card border rounded-xl overflow-hidden">
       <div className="px-4 py-3 border-b bg-secondary/30">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          {categoryName} Structure
+          {tn(categoryName)} {t('categories.structure')}
         </h3>
-        <p className="text-[10px] text-muted-foreground mt-0.5">Tap any unit to log it</p>
+        <p className="text-[10px] text-muted-foreground mt-0.5">{t('categories.tapToLog')}</p>
       </div>
       <div className="max-h-[400px] overflow-y-auto py-1">
         {subcategories.map(node => (
