@@ -147,7 +147,9 @@ function saveToStorage<T>(key: string, value: T): void {
 
 export function useCategories() {
   const [categories, setCategories] = useState<StudyCategory[]>(() =>
-    loadFromStorage<StudyCategory[]>('torahTracker_categories', DEFAULT_CATEGORIES).map(withDefaultSubcategories)
+    loadFromStorage<StudyCategory[]>('torahTracker_categories', DEFAULT_CATEGORIES)
+      .filter(c => c.id !== 'chumash')
+      .map(withDefaultSubcategories)
   );
 
   useEffect(() => {
