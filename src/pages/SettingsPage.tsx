@@ -2,6 +2,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { useSettings, useEntries, useCategories, useGoals } from '@/lib/store';
 import { Download, Share2, Sun, Moon, Monitor, Palette, Bell, Layout } from 'lucide-react';
 import { toast } from 'sonner';
+import { CategoryManager } from '@/components/CategoryManager';
 
 export default function SettingsPage() {
   const { settings, updateSettings } = useSettings();
@@ -153,6 +154,11 @@ export default function SettingsPage() {
             </div>
           )}
         </div>
+      </section>
+
+      {/* Categories management */}
+      <section className="mb-6">
+        <CategoryManager />
       </section>
 
       {/* Export & Share */}

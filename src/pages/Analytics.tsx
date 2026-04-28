@@ -1,9 +1,10 @@
 import { PageHeader } from '@/components/layout/PageHeader';
-import { useEntries, useCategories, computeStreak, getCategoryStats } from '@/lib/store';
+import { useEntries, useCategories, computeStreak, getCategoryStats, LearningEntry } from '@/lib/store';
+import { SubCategory } from '@/lib/category-structures';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts';
-import { Flame, Calendar, BookOpen, RotateCcw } from 'lucide-react';
-import { useState } from 'react';
+import { Flame, Calendar, BookOpen, RotateCcw, Target } from 'lucide-react';
+import { useState, useMemo } from 'react';
 
 const CHART_COLORS = [
   'hsl(142, 25%, 36%)',
@@ -15,6 +16,57 @@ const CHART_COLORS = [
 ];
 
 type TimeRange = '7d' | '30d' | '90d' | 'all';
+
+function buildUnitLabel(parentPath: string[], node: SubCategory): string {
+  const masechta = parentPath[parentPath.length - 1] || '';
+  const cleanName = node.name.replace(/\s*\(.*\)\s*$/, '');
+  return `${masechta} ${cleanName}`.trim();
+}
+
+function getLeafProgress(entries: LearningEntry[], categoryId: string, unitLabel: string): number {
+  const needle = unitLabel.toLowerCase();
+  const matches = entries.filter(
+    e => e.categoryId === categoryId && e.unit.toLowerCase().includes(needle)
+  );
+  if (matches.length === 0) return 0;
+  let best = 0;
+  for (const e of matches) {
+    if (e.components.length === 0) best = Math.max(best, 1);
+    else {
+      const learned = e.components.filter(c => c.learned).length;
+      best = Math.max(best, learned / e.components.length);
+    }
+  }
+  return best;
+}
+
+interface LeafProgress {
+  categoryId: string;
+  categoryName: string;
+  categoryIcon: string;
+  unitLabel: string;
+  fraction: number;
+}
+
+function collectLeaves(
+  nodes: SubCategory[],
+  path: string[],
+  categoryId: string,
+  categoryName: string,
+  categoryIcon: string,
+  entries: LearningEntry[],
+  out: LeafProgress[],
+) {
+  for (const node of nodes) {
+    if (node.children && node.children.length > 0) {
+      collectLeaves(node.children, [...path, node.name], categoryId, categoryName, categoryIcon, entries, out);
+    } else {
+      const label = buildUnitLabel(path, node);
+      const frac = getLeafProgress(entries, categoryId, label);
+      out.push({ categoryId, categoryName, categoryIcon, unitLabel: label, fraction: frac });
+    }
+  }
+}
 
 export default function Analytics() {
   const { entries } = useEntries();
@@ -63,6 +115,19 @@ export default function Analytics() {
     (sum, e) => sum + e.components.filter(c => c.learned).length, 0
   );
   const uniqueDays = new Set(filteredEntries.map(e => e.date)).size;
+
+  // Closest to completion: leaves with progress > 0 and < 1, sorted desc
+  const closestToCompletion = useMemo(() => {
+    const out: LeafProgress[] = [];
+    for (const cat of categories) {
+      if (!cat.subcategories || cat.subcategories.length === 0) continue;
+      collectLeaves(cat.subcategories, [], cat.id, cat.name, cat.icon, entries, out);
+    }
+    return out
+      .filter(l => l.fraction > 0 && l.fraction < 1)
+      .sort((a, b) => b.fraction - a.fraction)
+      .slice(0, 8);
+  }, [categories, entries]);
 
   return (
     <div className="pb-24 px-4 pt-6 max-w-lg mx-auto">
@@ -221,6 +286,43 @@ export default function Analytics() {
                     <span>{d.learned} learned</span>
                     <span>{d.reviewed} reviewed</span>
                   </div>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
+
+      {closestToCompletion.length > 0 && (
+        <motion.div
+          className="mt-6"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <Target className="w-4 h-4 text-primary" />
+            <h2 className="text-sm font-semibold">Closest to Completion</h2>
+          </div>
+          <div className="space-y-2">
+            {closestToCompletion.map((item, i) => {
+              const pct = Math.round(item.fraction * 100);
+              return (
+                <div key={`${item.categoryId}-${item.unitLabel}-${i}`} className="bg-card border rounded-xl p-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm font-medium truncate">
+                      <span className="mr-1">{item.categoryIcon}</span>
+                      {item.unitLabel}
+                    </span>
+                    <span className="text-xs font-semibold text-primary tabular-nums shrink-0 ml-2">{pct}%</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1">{item.categoryName}</p>
                 </div>
               );
             })}

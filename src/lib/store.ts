@@ -1,6 +1,6 @@
 // Local storage based store for Torah learning data
 import { useState, useEffect, useCallback } from 'react';
-import { SubCategory, GEMARA_STRUCTURE, TANACH_STRUCTURE, CHUMASH_STRUCTURE, MISHNAYOS_STRUCTURE, HALACHA_STRUCTURE } from './category-structures';
+import { SubCategory, GEMARA_STRUCTURE, TANACH_STRUCTURE, MISHNAYOS_STRUCTURE, HALACHA_STRUCTURE } from './category-structures';
 
 export type { SubCategory } from './category-structures';
 
@@ -10,7 +10,6 @@ export type { SubCategory } from './category-structures';
 const BUILTIN_STRUCTURES: Record<string, SubCategory[]> = {
   gemara: GEMARA_STRUCTURE,
   mishnayos: MISHNAYOS_STRUCTURE,
-  chumash: CHUMASH_STRUCTURE,
   tanach: TANACH_STRUCTURE,
   halacha: HALACHA_STRUCTURE,
 };
@@ -102,17 +101,6 @@ const DEFAULT_CATEGORIES: StudyCategory[] = [
     subcategories: MISHNAYOS_STRUCTURE,
   },
   {
-    id: 'chumash',
-    name: 'Chumash',
-    icon: '📕',
-    unitType: 'pasuk',
-    defaultComponents: ['Pasuk', 'Rashi', 'Targum'],
-    color: '25 60% 52%',
-    trackByLines: false,
-    structure: 'tanach',
-    subcategories: CHUMASH_STRUCTURE,
-  },
-  {
     id: 'halacha',
     name: 'Halacha',
     icon: '⚖️',
@@ -159,7 +147,9 @@ function saveToStorage<T>(key: string, value: T): void {
 
 export function useCategories() {
   const [categories, setCategories] = useState<StudyCategory[]>(() =>
-    loadFromStorage<StudyCategory[]>('torahTracker_categories', DEFAULT_CATEGORIES).map(withDefaultSubcategories)
+    loadFromStorage<StudyCategory[]>('torahTracker_categories', DEFAULT_CATEGORIES)
+      .filter(c => c.id !== 'chumash')
+      .map(withDefaultSubcategories)
   );
 
   useEffect(() => {
