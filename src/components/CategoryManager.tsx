@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useCategories, StudyCategory } from '@/lib/store';
 import { Plus, Pencil, Trash2, X, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useI18n } from '@/lib/i18n';
 
 const ICONS = ['📜', '📖', '📕', '📗', '📘', '📙', '⚖️', '🕯️', '✡️', '🔖', '📚', '🎓'];
 const UNIT_TYPES = ['daf', 'amud', 'perek', 'pasuk', 'siman', 'halacha', 'minutes', 'pages', 'custom'];
@@ -17,6 +18,7 @@ function generateId() {
 
 export function CategoryManager() {
   const { categories, addCategory, updateCategory, removeCategory } = useCategories();
+  const { t, tn } = useI18n();
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -195,7 +197,7 @@ export function CategoryManager() {
           <div key={cat.id} className="bg-card border rounded-xl p-3 flex items-center gap-3">
             <span className="text-2xl">{cat.icon}</span>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold">{cat.name}</p>
+              <p className="text-sm font-semibold">{tn(cat.name)}</p>
               <p className="text-[11px] text-muted-foreground truncate">
                 {cat.unitType}{cat.structure && cat.structure !== 'custom' ? ` · ${cat.structure}` : ''}
               </p>
