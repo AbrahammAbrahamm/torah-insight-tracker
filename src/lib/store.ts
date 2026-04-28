@@ -101,17 +101,6 @@ const DEFAULT_CATEGORIES: StudyCategory[] = [
     subcategories: MISHNAYOS_STRUCTURE,
   },
   {
-    id: 'chumash',
-    name: 'Chumash',
-    icon: '📕',
-    unitType: 'pasuk',
-    defaultComponents: ['Pasuk', 'Rashi', 'Targum'],
-    color: '25 60% 52%',
-    trackByLines: false,
-    structure: 'tanach',
-    subcategories: CHUMASH_STRUCTURE,
-  },
-  {
     id: 'halacha',
     name: 'Halacha',
     icon: '⚖️',
