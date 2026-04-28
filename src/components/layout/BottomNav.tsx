@@ -1,17 +1,19 @@
 import { BookOpen, Plus, BarChart3, Settings } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useI18n, StringKey } from '@/lib/i18n';
 
-const navItems = [
-  { path: '/', icon: BookOpen, label: 'Learn' },
-  { path: '/log', icon: Plus, label: 'Log', isAction: true },
-  { path: '/analytics', icon: BarChart3, label: 'Stats' },
-  { path: '/settings', icon: Settings, label: 'Settings' },
+const navItems: { path: string; icon: typeof BookOpen; labelKey: StringKey; isAction?: boolean }[] = [
+  { path: '/', icon: BookOpen, labelKey: 'nav.learn' },
+  { path: '/log', icon: Plus, labelKey: 'nav.log', isAction: true },
+  { path: '/analytics', icon: BarChart3, labelKey: 'nav.stats' },
+  { path: '/settings', icon: Settings, labelKey: 'nav.settings' },
 ];
 
 export function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-card/95 backdrop-blur-md safe-area-bottom">
@@ -26,6 +28,7 @@ export function BottomNav() {
                 key={item.path}
                 onClick={() => navigate(item.path)}
                 className="flex items-center justify-center w-12 h-12 rounded-full bg-primary shadow-lg -mt-4"
+                aria-label={t(item.labelKey)}
               >
                 <Icon className="w-6 h-6 text-primary-foreground" />
               </button>
@@ -42,7 +45,7 @@ export function BottomNav() {
               )}
             >
               <Icon className="w-5 h-5" />
-              <span className="text-[10px] font-medium">{item.label}</span>
+              <span className="text-[10px] font-medium">{t(item.labelKey)}</span>
             </button>
           );
         })}

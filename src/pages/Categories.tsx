@@ -3,10 +3,12 @@ import { useCategories } from '@/lib/store';
 import { ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SubCategoryBrowser } from '@/components/SubCategoryBrowser';
+import { useI18n } from '@/lib/i18n';
 
 export default function Categories() {
   const { categories } = useCategories();
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
+  const { tn, isRtl } = useI18n();
 
   return (
     <div className="pb-24 px-4 pt-6 max-w-lg mx-auto">
@@ -33,10 +35,10 @@ export default function Categories() {
               >
                 <span className="text-2xl">{cat.icon}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-base font-semibold">{cat.name}</p>
+                  <p className="text-base font-semibold">{tn(cat.name)}</p>
                 </div>
                 {hasSubs && (
-                  <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                  <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-90' : (isRtl ? 'rotate-180' : '')}`} />
                 )}
               </motion.div>
 

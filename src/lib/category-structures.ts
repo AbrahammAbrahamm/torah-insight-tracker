@@ -296,13 +296,16 @@ export const MISHNAYOS_STRUCTURE: SubCategory[] = [
   },
 ];
 
-// Generate Siman entries each containing a default set of Sifim.
-// Standard Shulchan Aruch sifim counts vary widely; we default to 10 per siman
-// as a reasonable browseable scaffold (users can still log against any sif).
-function generateSimanim(prefix: string, count: number, sifimPerSiman = 10): SubCategory[] {
-  return Array.from({ length: count }, (_, i) => {
+import { OC_SIFIM, YD_SIFIM, EH_SIFIM, CM_SIFIM } from './sifim-data';
+
+// Generate Siman entries each containing the accurate number of sifim from
+// the Sefaria Shulchan Arukh data. sifimCounts[i] is the number of sifim in
+// Siman (i+1).
+function generateSimanim(prefix: string, sifimCounts: number[]): SubCategory[] {
+  return sifimCounts.map((sifimCount, i) => {
     const simanNum = i + 1;
-    const sifim: SubCategory[] = Array.from({ length: sifimPerSiman }, (_, j) => ({
+    const count = Math.max(1, sifimCount);
+    const sifim: SubCategory[] = Array.from({ length: count }, (_, j) => ({
       id: `${prefix}-siman-${simanNum}-sif-${j + 1}`,
       name: `Sif ${j + 1}`,
       totalUnits: 1,
@@ -310,7 +313,7 @@ function generateSimanim(prefix: string, count: number, sifimPerSiman = 10): Sub
     return {
       id: `${prefix}-siman-${simanNum}`,
       name: `Siman ${simanNum}`,
-      totalUnits: sifimPerSiman,
+      totalUnits: count,
       children: sifim,
     };
   });
@@ -318,8 +321,8 @@ function generateSimanim(prefix: string, count: number, sifimPerSiman = 10): Sub
 
 // Halacha — Shulchan Aruch sections: Section → Siman → Sif
 export const HALACHA_STRUCTURE: SubCategory[] = [
-  { id: 'orach-chaim', name: 'Orach Chaim', children: generateSimanim('oc', 697) },
-  { id: 'yoreh-deah', name: 'Yoreh Deah', children: generateSimanim('yd', 403) },
-  { id: 'even-haezer', name: 'Even HaEzer', children: generateSimanim('eh', 178) },
-  { id: 'choshen-mishpat', name: 'Choshen Mishpat', children: generateSimanim('cm', 427) },
+  { id: 'orach-chaim', name: 'Orach Chaim', children: generateSimanim('oc', OC_SIFIM) },
+  { id: 'yoreh-deah', name: 'Yoreh Deah', children: generateSimanim('yd', YD_SIFIM) },
+  { id: 'even-haezer', name: 'Even HaEzer', children: generateSimanim('eh', EH_SIFIM) },
+  { id: 'choshen-mishpat', name: 'Choshen Mishpat', children: generateSimanim('cm', CM_SIFIM) },
 ];
