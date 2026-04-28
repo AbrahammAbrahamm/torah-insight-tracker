@@ -296,30 +296,30 @@ export const MISHNAYOS_STRUCTURE: SubCategory[] = [
   },
 ];
 
-// Halacha — Shulchan Aruch sections
+// Generate Siman entries each containing a default set of Sifim.
+// Standard Shulchan Aruch sifim counts vary widely; we default to 10 per siman
+// as a reasonable browseable scaffold (users can still log against any sif).
+function generateSimanim(prefix: string, count: number, sifimPerSiman = 10): SubCategory[] {
+  return Array.from({ length: count }, (_, i) => {
+    const simanNum = i + 1;
+    const sifim: SubCategory[] = Array.from({ length: sifimPerSiman }, (_, j) => ({
+      id: `${prefix}-siman-${simanNum}-sif-${j + 1}`,
+      name: `Sif ${j + 1}`,
+      totalUnits: 1,
+    }));
+    return {
+      id: `${prefix}-siman-${simanNum}`,
+      name: `Siman ${simanNum}`,
+      totalUnits: sifimPerSiman,
+      children: sifim,
+    };
+  });
+}
+
+// Halacha — Shulchan Aruch sections: Section → Siman → Sif
 export const HALACHA_STRUCTURE: SubCategory[] = [
-  {
-    id: 'orach-chaim', name: 'Orach Chaim',
-    children: Array.from({ length: 697 }, (_, i) => ({
-      id: `oc-siman-${i + 1}`, name: `Siman ${i + 1}`, totalUnits: 1,
-    })),
-  },
-  {
-    id: 'yoreh-deah', name: 'Yoreh Deah',
-    children: Array.from({ length: 403 }, (_, i) => ({
-      id: `yd-siman-${i + 1}`, name: `Siman ${i + 1}`, totalUnits: 1,
-    })),
-  },
-  {
-    id: 'even-haezer', name: 'Even HaEzer',
-    children: Array.from({ length: 178 }, (_, i) => ({
-      id: `eh-siman-${i + 1}`, name: `Siman ${i + 1}`, totalUnits: 1,
-    })),
-  },
-  {
-    id: 'choshen-mishpat', name: 'Choshen Mishpat',
-    children: Array.from({ length: 427 }, (_, i) => ({
-      id: `cm-siman-${i + 1}`, name: `Siman ${i + 1}`, totalUnits: 1,
-    })),
-  },
+  { id: 'orach-chaim', name: 'Orach Chaim', children: generateSimanim('oc', 697) },
+  { id: 'yoreh-deah', name: 'Yoreh Deah', children: generateSimanim('yd', 403) },
+  { id: 'even-haezer', name: 'Even HaEzer', children: generateSimanim('eh', 178) },
+  { id: 'choshen-mishpat', name: 'Choshen Mishpat', children: generateSimanim('cm', 427) },
 ];
