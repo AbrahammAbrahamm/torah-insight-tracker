@@ -17,6 +17,57 @@ const CHART_COLORS = [
 
 type TimeRange = '7d' | '30d' | '90d' | 'all';
 
+function buildUnitLabel(parentPath: string[], node: SubCategory): string {
+  const masechta = parentPath[parentPath.length - 1] || '';
+  const cleanName = node.name.replace(/\s*\(.*\)\s*$/, '');
+  return `${masechta} ${cleanName}`.trim();
+}
+
+function getLeafProgress(entries: LearningEntry[], categoryId: string, unitLabel: string): number {
+  const needle = unitLabel.toLowerCase();
+  const matches = entries.filter(
+    e => e.categoryId === categoryId && e.unit.toLowerCase().includes(needle)
+  );
+  if (matches.length === 0) return 0;
+  let best = 0;
+  for (const e of matches) {
+    if (e.components.length === 0) best = Math.max(best, 1);
+    else {
+      const learned = e.components.filter(c => c.learned).length;
+      best = Math.max(best, learned / e.components.length);
+    }
+  }
+  return best;
+}
+
+interface LeafProgress {
+  categoryId: string;
+  categoryName: string;
+  categoryIcon: string;
+  unitLabel: string;
+  fraction: number;
+}
+
+function collectLeaves(
+  nodes: SubCategory[],
+  path: string[],
+  categoryId: string,
+  categoryName: string,
+  categoryIcon: string,
+  entries: LearningEntry[],
+  out: LeafProgress[],
+) {
+  for (const node of nodes) {
+    if (node.children && node.children.length > 0) {
+      collectLeaves(node.children, [...path, node.name], categoryId, categoryName, categoryIcon, entries, out);
+    } else {
+      const label = buildUnitLabel(path, node);
+      const frac = getLeafProgress(entries, categoryId, label);
+      out.push({ categoryId, categoryName, categoryIcon, unitLabel: label, fraction: frac });
+    }
+  }
+}
+
 export default function Analytics() {
   const { entries } = useEntries();
   const { categories } = useCategories();
