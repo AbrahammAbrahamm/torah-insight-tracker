@@ -293,6 +293,43 @@ export default function Analytics() {
         </motion.div>
       )}
 
+      {closestToCompletion.length > 0 && (
+        <motion.div
+          className="mt-6"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <Target className="w-4 h-4 text-primary" />
+            <h2 className="text-sm font-semibold">Closest to Completion</h2>
+          </div>
+          <div className="space-y-2">
+            {closestToCompletion.map((item, i) => {
+              const pct = Math.round(item.fraction * 100);
+              return (
+                <div key={`${item.categoryId}-${item.unitLabel}-${i}`} className="bg-card border rounded-xl p-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm font-medium truncate">
+                      <span className="mr-1">{item.categoryIcon}</span>
+                      {item.unitLabel}
+                    </span>
+                    <span className="text-xs font-semibold text-primary tabular-nums shrink-0 ml-2">{pct}%</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1">{item.categoryName}</p>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
+
       {entries.length === 0 && (
         <div className="text-center py-16">
           <p className="text-muted-foreground text-sm">Start logging to see your analytics</p>
