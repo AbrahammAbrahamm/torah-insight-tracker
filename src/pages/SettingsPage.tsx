@@ -156,6 +156,11 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      {/* Categories management */}
+      <section className="mb-6">
+        <CategoryManager />
+      </section>
+
       {/* Export & Share */}
       <section className="mb-6">
         <h2 className="text-sm font-semibold mb-3">Export & Share</h2>
