@@ -88,7 +88,7 @@ export default function Analytics() {
   const categoryData = categories.map((cat, i) => {
     const stats = getCategoryStats(filteredEntries, cat.id);
     return {
-      name: cat.name,
+      name: tn(cat.name),
       icon: cat.icon,
       units: stats.totalUnits,
       learned: stats.learnedComponents,
@@ -133,7 +133,7 @@ export default function Analytics() {
 
   return (
     <div className="pb-24 px-4 pt-6 max-w-lg mx-auto">
-      <PageHeader title="Analytics" subtitle="Your learning insights" />
+      <PageHeader title={t('analytics.title')} subtitle={t('analytics.subtitle')} />
 
       {/* Time range */}
       <div className="flex gap-2 mb-6">
@@ -145,7 +145,7 @@ export default function Analytics() {
               range === r ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
             }`}
           >
-            {r === 'all' ? 'All Time' : r}
+            {r === 'all' ? t('analytics.allTime') : r}
           </button>
         ))}
       </div>
@@ -160,28 +160,28 @@ export default function Analytics() {
           <Flame className="w-8 h-8 text-streak" />
           <div>
             <p className="text-xl font-bold font-display">{streak}</p>
-            <p className="text-[11px] text-muted-foreground">Day Streak</p>
+            <p className="text-[11px] text-muted-foreground">{t('analytics.dayStreak')}</p>
           </div>
         </div>
         <div className="bg-card border rounded-xl p-3 flex items-center gap-3">
           <Calendar className="w-8 h-8 text-primary" />
           <div>
             <p className="text-xl font-bold font-display">{uniqueDays}</p>
-            <p className="text-[11px] text-muted-foreground">Active Days</p>
+            <p className="text-[11px] text-muted-foreground">{t('analytics.activeDays')}</p>
           </div>
         </div>
         <div className="bg-card border rounded-xl p-3 flex items-center gap-3">
           <BookOpen className="w-8 h-8 text-success" />
           <div>
             <p className="text-xl font-bold font-display">{totalLearned}</p>
-            <p className="text-[11px] text-muted-foreground">Learned</p>
+            <p className="text-[11px] text-muted-foreground">{t('analytics.learned')}</p>
           </div>
         </div>
         <div className="bg-card border rounded-xl p-3 flex items-center gap-3">
           <RotateCcw className="w-8 h-8 text-accent" />
           <div>
             <p className="text-xl font-bold font-display">{totalReviews}</p>
-            <p className="text-[11px] text-muted-foreground">Reviews</p>
+            <p className="text-[11px] text-muted-foreground">{t('analytics.reviews')}</p>
           </div>
         </div>
       </motion.div>
@@ -193,7 +193,7 @@ export default function Analytics() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <h2 className="text-sm font-semibold mb-3">Daily Activity</h2>
+        <h2 className="text-sm font-semibold mb-3">{t('analytics.dailyActivity')}</h2>
         <div className="h-40">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={dailyData}>
@@ -227,7 +227,7 @@ export default function Analytics() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h2 className="text-sm font-semibold mb-3">By Category</h2>
+          <h2 className="text-sm font-semibold mb-3">{t('analytics.byCategory')}</h2>
           <div className="flex items-center gap-4">
             <div className="w-28 h-28">
               <ResponsiveContainer width="100%" height="100%">
@@ -267,7 +267,7 @@ export default function Analytics() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <h2 className="text-sm font-semibold mb-3">Category Details</h2>
+          <h2 className="text-sm font-semibold mb-3">{t('analytics.categoryDetails')}</h2>
           <div className="space-y-2">
             {categoryData.map((d, i) => {
               const completionPct = d.units > 0 ? Math.round((d.learned / Math.max(1, d.learned + (d.units - d.learned))) * 100) : 0;
@@ -275,7 +275,7 @@ export default function Analytics() {
                 <div key={i} className="bg-card border rounded-xl p-3">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium">{d.icon} {d.name}</span>
-                    <span className="text-xs text-muted-foreground">{completionPct}% learned</span>
+                    <span className="text-xs text-muted-foreground">{completionPct}% {t('analytics.learnedLabel')}</span>
                   </div>
                   <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
                     <div
@@ -284,9 +284,9 @@ export default function Analytics() {
                     />
                   </div>
                   <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                    <span>{d.units} units</span>
-                    <span>{d.learned} learned</span>
-                    <span>{d.reviewed} reviewed</span>
+                    <span>{d.units} {t('analytics.units')}</span>
+                    <span>{d.learned} {t('analytics.learnedLabel')}</span>
+                    <span>{d.reviewed} {t('analytics.reviewedLabel')}</span>
                   </div>
                 </div>
               );
@@ -304,7 +304,7 @@ export default function Analytics() {
         >
           <div className="flex items-center gap-2 mb-3">
             <Target className="w-4 h-4 text-primary" />
-            <h2 className="text-sm font-semibold">Closest to Completion</h2>
+            <h2 className="text-sm font-semibold">{t('analytics.closestCompletion')}</h2>
           </div>
           <div className="space-y-2">
             {closestToCompletion.map((item, i) => {
@@ -324,7 +324,7 @@ export default function Analytics() {
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-1">{item.categoryName}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">{tn(item.categoryName)}</p>
                 </div>
               );
             })}
@@ -334,7 +334,7 @@ export default function Analytics() {
 
       {entries.length === 0 && (
         <div className="text-center py-16">
-          <p className="text-muted-foreground text-sm">Start logging to see your analytics</p>
+          <p className="text-muted-foreground text-sm">{t('analytics.empty')}</p>
         </div>
       )}
     </div>
