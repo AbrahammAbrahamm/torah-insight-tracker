@@ -69,6 +69,17 @@ const STRINGS = {
   'analytics.units': { en: 'units', he: 'יחידות' },
   'analytics.learnedLabel': { en: 'learned', he: 'נלמדו' },
   'analytics.reviewedLabel': { en: 'reviewed', he: 'נחזרו' },
+  'analytics.heatmap': { en: 'Activity Heatmap (12 weeks)', he: 'מפת פעילות (12 שבועות)' },
+  'analytics.heatmapLess': { en: 'Less', he: 'פחות' },
+  'analytics.heatmapMore': { en: 'More', he: 'יותר' },
+  'analytics.highlights': { en: 'Highlights', he: 'תובנות' },
+  'analytics.bestDay': { en: 'Best Day', he: 'יום שיא' },
+  'analytics.avgPerDay': { en: 'Avg / Active Day', he: 'ממוצע ליום פעיל' },
+  'analytics.totalEntries': { en: 'Total Entries', he: 'סה״כ רישומים' },
+  'analytics.topCategory': { en: 'Top Category', he: 'קטגוריה מובילה' },
+  'analytics.byWeekday': { en: 'By Day of Week', he: 'לפי ימי השבוע' },
+  'analytics.recentActivity': { en: 'Recent Activity', he: 'פעילות אחרונה' },
+  'analytics.noEntriesYet': { en: 'No entries yet', he: 'אין רישומים' },
 
   // Settings
   'settings.title': { en: 'Settings', he: 'הגדרות' },
