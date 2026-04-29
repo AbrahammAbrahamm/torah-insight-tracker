@@ -175,6 +175,7 @@ export const TANACH_NACH_STRUCTURE: SubCategory[] = [
   { id: 'divrei-hayamim-2', name: 'Divrei HaYamim II', children: generatePerakimSimple(36) },
 ];
 
+// Kept for backward compatibility with older saved data.
 export const TANACH_STRUCTURE: SubCategory[] = [
   { id: 'torah', name: 'Torah (Chumash)', children: CHUMASH_STRUCTURE },
   { id: 'neviim-kesuvim', name: "Nevi'im & Kesuvim", children: TANACH_NACH_STRUCTURE },
