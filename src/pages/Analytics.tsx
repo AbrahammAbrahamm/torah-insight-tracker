@@ -486,11 +486,42 @@ export default function Analytics() {
         </motion.div>
       )}
 
+      {recentEntries.length > 0 && (
+        <motion.div
+          className="mt-6"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <h2 className="text-sm font-semibold mb-3">{t('analytics.recentActivity')}</h2>
+          <div className="space-y-2">
+            {recentEntries.map(e => {
+              const cat = categories.find(c => c.id === e.categoryId);
+              return (
+                <div key={e.id} className="bg-card border rounded-xl p-3 flex items-center gap-3">
+                  <span className="text-lg">{cat?.icon || '📚'}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{e.unit}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {cat ? tn(cat.name) : ''} · {e.components.filter(c => c.learned).length}/{e.components.length} {t('analytics.learnedLabel')}
+                    </p>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground shrink-0">
+                    {new Date(e.date).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
+
       {entries.length === 0 && (
         <div className="text-center py-16">
           <p className="text-muted-foreground text-sm">{t('analytics.empty')}</p>
         </div>
       )}
+
     </div>
   );
 }
