@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { SubCategory } from '@/lib/category-structures';
-import { ChevronRight, ChevronDown, BookOpen, CheckCircle2 } from 'lucide-react';
+import { ChevronRight, ChevronDown, BookOpen, CheckCircle2, CheckCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useEntries, LearningEntry } from '@/lib/store';
+import { useEntries, useCategories, LearningEntry, LearningComponent } from '@/lib/store';
 import { useI18n } from '@/lib/i18n';
+import { toast } from 'sonner';
 
 interface SubCategoryBrowserProps {
   subcategories: SubCategory[];
@@ -12,14 +13,12 @@ interface SubCategoryBrowserProps {
   categoryId: string;
 }
 
-// Build a human label like "Bava Metzia Daf 2a" from path + node
 function buildUnitLabel(parentPath: string[], node: SubCategory): string {
   const masechta = parentPath[parentPath.length - 1] || '';
   const cleanName = node.name.replace(/\s*\(.*\)\s*$/, '');
   return `${masechta} ${cleanName}`.trim();
 }
 
-// Returns a fraction 0..1 of how complete a leaf unit is, based on logged entries.
 function getLeafProgress(entries: LearningEntry[], categoryId: string, unitLabel: string): number {
   const needle = unitLabel.toLowerCase();
   const matches = entries.filter(
@@ -38,7 +37,6 @@ function getLeafProgress(entries: LearningEntry[], categoryId: string, unitLabel
   return best;
 }
 
-// Aggregate progress: average of leaf fractions under this node
 function getNodeProgress(
   node: SubCategory,
   categoryId: string,
@@ -66,6 +64,17 @@ function getNodeProgress(
   };
 }
 
+// Collect all leaf labels under a node (for bulk logging).
+function collectLeafLabels(node: SubCategory, parentPath: string[], out: string[]) {
+  if (!node.children || node.children.length === 0) {
+    out.push(buildUnitLabel(parentPath, node));
+    return;
+  }
+  for (const child of node.children) {
+    collectLeafLabels(child, [...parentPath, node.name], out);
+  }
+}
+
 function ProgressBar({ value, tone }: { value: number; tone: 'success' | 'primary' | 'muted' }) {
   const pct = Math.round(value * 100);
   const fillClass =
@@ -84,6 +93,7 @@ function SubCategoryNode({
   categoryId,
   entries,
   onLogLeaf,
+  onLogAll,
 }: {
   node: SubCategory;
   depth?: number;
@@ -91,6 +101,7 @@ function SubCategoryNode({
   categoryId: string;
   entries: LearningEntry[];
   onLogLeaf: (unitLabel: string) => void;
+  onLogAll: (node: SubCategory, path: string[]) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const { tn } = useI18n();
@@ -113,35 +124,52 @@ function SubCategoryNode({
 
   return (
     <div>
-      <button
-        onClick={handleClick}
-        className={`w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors rounded-lg hover:bg-secondary/60 ${
+      <div
+        className={`w-full flex items-center gap-2 pr-2 py-2.5 text-left transition-colors rounded-lg hover:bg-secondary/60 ${
           depth === 0 ? 'font-semibold text-sm' : depth === 1 ? 'font-medium text-sm' : 'text-xs text-muted-foreground'
         }`}
         style={{ paddingLeft: `${depth * 16 + 12}px` }}
       >
-        {hasChildren ? (
-          isOpen ? (
-            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-          ) : (
-            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-          )
-        ) : pct >= 100 ? (
-          <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
-        ) : (
-          <BookOpen className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
-        )}
-        <span className={`flex-1 truncate ${pct >= 100 ? 'text-success' : ''}`}>{tn(node.name)}</span>
-
-        <ProgressBar value={progress.fraction} tone={tone} />
-        <span
-          className={`text-[10px] tabular-nums shrink-0 w-8 text-right ${
-            tone === 'success' ? 'text-success' : tone === 'primary' ? 'text-primary' : 'text-muted-foreground'
-          }`}
+        <button
+          onClick={handleClick}
+          className="flex items-center gap-2 flex-1 min-w-0 text-left"
         >
-          {pct}%
-        </span>
-      </button>
+          {hasChildren ? (
+            isOpen ? (
+              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            ) : (
+              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            )
+          ) : pct >= 100 ? (
+            <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
+          ) : (
+            <BookOpen className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
+          )}
+          <span className={`flex-1 truncate ${pct >= 100 ? 'text-success' : ''}`}>{tn(node.name)}</span>
+
+          <ProgressBar value={progress.fraction} tone={tone} />
+          <span
+            className={`text-[10px] tabular-nums shrink-0 w-8 text-right ${
+              tone === 'success' ? 'text-success' : tone === 'primary' ? 'text-primary' : 'text-muted-foreground'
+            }`}
+          >
+            {pct}%
+          </span>
+        </button>
+        {hasChildren && pct < 100 && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onLogAll(node, path);
+            }}
+            className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-success hover:bg-success/10"
+            title="Log all below as learned"
+            aria-label="Log all below as learned"
+          >
+            <CheckCheck className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
 
       <AnimatePresence>
         {isOpen && hasChildren && (
@@ -161,6 +189,7 @@ function SubCategoryNode({
                 categoryId={categoryId}
                 entries={entries}
                 onLogLeaf={onLogLeaf}
+                onLogAll={onLogAll}
               />
             ))}
           </motion.div>
@@ -170,14 +199,59 @@ function SubCategoryNode({
   );
 }
 
+function generateId() {
+  return Math.random().toString(36).slice(2, 10);
+}
+
 export function SubCategoryBrowser({ subcategories, categoryName, categoryId }: SubCategoryBrowserProps) {
   const navigate = useNavigate();
-  const { entries } = useEntries();
+  const { entries, addEntries } = useEntries();
+  const { categories } = useCategories();
   const { t, tn } = useI18n();
 
   const handleLogLeaf = (unitLabel: string) => {
     const params = new URLSearchParams({ category: categoryId, unit: unitLabel });
     navigate(`/log?${params.toString()}`);
+  };
+
+  const handleLogAll = (node: SubCategory, path: string[]) => {
+    const labels: string[] = [];
+    collectLeafLabels(node, path, labels);
+    if (labels.length === 0) return;
+
+    const cat = categories.find(c => c.id === categoryId);
+    const today = new Date().toISOString().split('T')[0];
+    const nowIso = new Date().toISOString();
+
+    // Skip leaves that are already fully complete.
+    const labelsToLog = labels.filter(label => getLeafProgress(entries, categoryId, label) < 1);
+    if (labelsToLog.length === 0) {
+      toast.info('Already fully logged');
+      return;
+    }
+
+    const newEntries: LearningEntry[] = labelsToLog.map(label => {
+      const components: LearningComponent[] = (cat?.defaultComponents || ['Learned']).map(name => ({
+        id: generateId(),
+        name,
+        learned: true,
+        reviewed: false,
+        reviewCount: 0,
+        notes: '',
+      }));
+      return {
+        id: generateId(),
+        categoryId,
+        date: today,
+        unit: label,
+        unitType: cat?.unitType || 'custom',
+        components,
+        createdAt: nowIso,
+      };
+    });
+
+    addEntries(newEntries);
+    toast.success(`Logged ${newEntries.length} units in ${tn(node.name)}`);
   };
 
   return (
@@ -196,6 +270,7 @@ export function SubCategoryBrowser({ subcategories, categoryName, categoryId }: 
             categoryId={categoryId}
             entries={entries}
             onLogLeaf={handleLogLeaf}
+            onLogAll={handleLogAll}
           />
         ))}
       </div>

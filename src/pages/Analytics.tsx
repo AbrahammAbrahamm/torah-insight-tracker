@@ -3,7 +3,7 @@ import { useEntries, useCategories, computeStreak, getCategoryStats, LearningEnt
 import { SubCategory } from '@/lib/category-structures';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts';
-import { Flame, Calendar, BookOpen, RotateCcw, Target } from 'lucide-react';
+import { Flame, Calendar, BookOpen, RotateCcw, Target, Trophy, TrendingUp, Star } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useI18n } from '@/lib/i18n';
 
@@ -131,6 +131,59 @@ export default function Analytics() {
       .slice(0, 8);
   }, [categories, entries]);
 
+  // Highlights
+  const totalEntries = filteredEntries.length;
+  const avgPerDay = uniqueDays > 0 ? (totalEntries / uniqueDays).toFixed(1) : '0';
+
+  const dayCounts = new Map<string, number>();
+  filteredEntries.forEach(e => dayCounts.set(e.date, (dayCounts.get(e.date) || 0) + 1));
+  let bestDay: { date: string; count: number } | null = null;
+  for (const [date, count] of dayCounts) {
+    if (!bestDay || count > bestDay.count) bestDay = { date, count };
+  }
+  const bestDayLabel = bestDay
+    ? `${bestDay.count} (${new Date(bestDay.date).toLocaleDateString('en', { month: 'short', day: 'numeric' })})`
+    : '—';
+
+  const topCategory = categoryData.slice().sort((a, b) => b.units - a.units)[0];
+
+  // Weekday distribution (Sun..Sat)
+  const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const weekdayData = weekdayLabels.map(label => ({ day: label, count: 0 }));
+  filteredEntries.forEach(e => {
+    const d = new Date(e.date);
+    weekdayData[d.getDay()].count += 1;
+  });
+
+  // 12-week heatmap (last 12 weeks ending this week, Sun-aligned).
+  const heatmapWeeks = 12;
+  const heatmapStart = new Date();
+  heatmapStart.setDate(heatmapStart.getDate() - heatmapStart.getDay() - (heatmapWeeks - 1) * 7);
+  const heatmap: { date: string; count: number }[][] = [];
+  let maxHeat = 0;
+  for (let w = 0; w < heatmapWeeks; w++) {
+    const week: { date: string; count: number }[] = [];
+    for (let d = 0; d < 7; d++) {
+      const day = new Date(heatmapStart);
+      day.setDate(heatmapStart.getDate() + w * 7 + d);
+      const ds = day.toISOString().split('T')[0];
+      const c = entries.filter(e => e.date === ds).length;
+      if (c > maxHeat) maxHeat = c;
+      week.push({ date: ds, count: c });
+    }
+    heatmap.push(week);
+  }
+  const heatColor = (c: number) => {
+    if (c === 0) return 'bg-secondary';
+    const intensity = maxHeat > 0 ? c / maxHeat : 0;
+    if (intensity > 0.75) return 'bg-primary';
+    if (intensity > 0.5) return 'bg-primary/70';
+    if (intensity > 0.25) return 'bg-primary/45';
+    return 'bg-primary/25';
+  };
+
+  const recentEntries = entries.slice(0, 5);
+
   return (
     <div className="pb-24 px-4 pt-6 max-w-lg mx-auto">
       <PageHeader title={t('analytics.title')} subtitle={t('analytics.subtitle')} />
@@ -219,8 +272,109 @@ export default function Analytics() {
         </div>
       </motion.div>
 
+      {/* Highlights */}
+      <motion.div
+        className="grid grid-cols-2 gap-3 mb-6"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.12 }}
+      >
+        <div className="bg-card border rounded-xl p-3 flex items-center gap-3">
+          <Trophy className="w-7 h-7 text-streak" />
+          <div className="min-w-0">
+            <p className="text-sm font-bold font-display truncate">{bestDayLabel}</p>
+            <p className="text-[11px] text-muted-foreground">{t('analytics.bestDay')}</p>
+          </div>
+        </div>
+        <div className="bg-card border rounded-xl p-3 flex items-center gap-3">
+          <TrendingUp className="w-7 h-7 text-primary" />
+          <div>
+            <p className="text-sm font-bold font-display">{avgPerDay}</p>
+            <p className="text-[11px] text-muted-foreground">{t('analytics.avgPerDay')}</p>
+          </div>
+        </div>
+        <div className="bg-card border rounded-xl p-3 flex items-center gap-3">
+          <BookOpen className="w-7 h-7 text-success" />
+          <div>
+            <p className="text-sm font-bold font-display">{totalEntries}</p>
+            <p className="text-[11px] text-muted-foreground">{t('analytics.totalEntries')}</p>
+          </div>
+        </div>
+        <div className="bg-card border rounded-xl p-3 flex items-center gap-3">
+          <Star className="w-7 h-7 text-accent" />
+          <div className="min-w-0">
+            <p className="text-sm font-bold font-display truncate">
+              {topCategory ? `${topCategory.icon} ${topCategory.name}` : '—'}
+            </p>
+            <p className="text-[11px] text-muted-foreground">{t('analytics.topCategory')}</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* 12-week heatmap */}
+      <motion.div
+        className="bg-card border rounded-xl p-4 mb-6"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+      >
+        <h2 className="text-sm font-semibold mb-3">{t('analytics.heatmap')}</h2>
+        <div className="flex gap-1 justify-center" dir="ltr">
+          {heatmap.map((week, wi) => (
+            <div key={wi} className="flex flex-col gap-1">
+              {week.map((day, di) => (
+                <div
+                  key={di}
+                  className={`w-3 h-3 rounded-sm ${heatColor(day.count)}`}
+                  title={`${day.date}: ${day.count}`}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center justify-end gap-1.5 mt-3 text-[10px] text-muted-foreground">
+          <span>{t('analytics.heatmapLess')}</span>
+          <span className="w-2.5 h-2.5 rounded-sm bg-secondary" />
+          <span className="w-2.5 h-2.5 rounded-sm bg-primary/25" />
+          <span className="w-2.5 h-2.5 rounded-sm bg-primary/45" />
+          <span className="w-2.5 h-2.5 rounded-sm bg-primary/70" />
+          <span className="w-2.5 h-2.5 rounded-sm bg-primary" />
+          <span>{t('analytics.heatmapMore')}</span>
+        </div>
+      </motion.div>
+
+      {/* By weekday */}
+      {totalEntries > 0 && (
+        <motion.div
+          className="bg-card border rounded-xl p-4 mb-6"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18 }}
+        >
+          <h2 className="text-sm font-semibold mb-3">{t('analytics.byWeekday')}</h2>
+          <div className="h-32">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={weekdayData}>
+                <XAxis dataKey="day" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis hide />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: '0.5rem',
+                    border: '1px solid hsl(var(--border))',
+                    backgroundColor: 'hsl(var(--card))',
+                    fontSize: '12px',
+                  }}
+                />
+                <Bar dataKey="count" fill="hsl(var(--accent))" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+      )}
+
       {/* Category Breakdown */}
       {categoryData.length > 0 && (
+
         <motion.div
           className="bg-card border rounded-xl p-4 mb-6"
           initial={{ opacity: 0, y: 16 }}
@@ -332,11 +486,42 @@ export default function Analytics() {
         </motion.div>
       )}
 
+      {recentEntries.length > 0 && (
+        <motion.div
+          className="mt-6"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <h2 className="text-sm font-semibold mb-3">{t('analytics.recentActivity')}</h2>
+          <div className="space-y-2">
+            {recentEntries.map(e => {
+              const cat = categories.find(c => c.id === e.categoryId);
+              return (
+                <div key={e.id} className="bg-card border rounded-xl p-3 flex items-center gap-3">
+                  <span className="text-lg">{cat?.icon || '📚'}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{e.unit}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {cat ? tn(cat.name) : ''} · {e.components.filter(c => c.learned).length}/{e.components.length} {t('analytics.learnedLabel')}
+                    </p>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground shrink-0">
+                    {new Date(e.date).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
+
       {entries.length === 0 && (
         <div className="text-center py-16">
           <p className="text-muted-foreground text-sm">{t('analytics.empty')}</p>
         </div>
       )}
+
     </div>
   );
 }

@@ -184,6 +184,10 @@ export function useEntries() {
     setEntries(prev => [entry, ...prev]);
   }, []);
 
+  const addEntries = useCallback((newEntries: LearningEntry[]) => {
+    setEntries(prev => [...newEntries, ...prev]);
+  }, []);
+
   const updateEntry = useCallback((id: string, updates: Partial<LearningEntry>) => {
     setEntries(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
   }, []);
@@ -192,7 +196,7 @@ export function useEntries() {
     setEntries(prev => prev.filter(e => e.id !== id));
   }, []);
 
-  return { entries, addEntry, updateEntry, removeEntry, setEntries };
+  return { entries, addEntry, addEntries, updateEntry, removeEntry, setEntries };
 }
 
 export function useGoals() {

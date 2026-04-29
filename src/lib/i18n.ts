@@ -69,6 +69,17 @@ const STRINGS = {
   'analytics.units': { en: 'units', he: 'יחידות' },
   'analytics.learnedLabel': { en: 'learned', he: 'נלמדו' },
   'analytics.reviewedLabel': { en: 'reviewed', he: 'נחזרו' },
+  'analytics.heatmap': { en: 'Activity Heatmap (12 weeks)', he: 'מפת פעילות (12 שבועות)' },
+  'analytics.heatmapLess': { en: 'Less', he: 'פחות' },
+  'analytics.heatmapMore': { en: 'More', he: 'יותר' },
+  'analytics.highlights': { en: 'Highlights', he: 'תובנות' },
+  'analytics.bestDay': { en: 'Best Day', he: 'יום שיא' },
+  'analytics.avgPerDay': { en: 'Avg / Active Day', he: 'ממוצע ליום פעיל' },
+  'analytics.totalEntries': { en: 'Total Entries', he: 'סה״כ רישומים' },
+  'analytics.topCategory': { en: 'Top Category', he: 'קטגוריה מובילה' },
+  'analytics.byWeekday': { en: 'By Day of Week', he: 'לפי ימי השבוע' },
+  'analytics.recentActivity': { en: 'Recent Activity', he: 'פעילות אחרונה' },
+  'analytics.noEntriesYet': { en: 'No entries yet', he: 'אין רישומים' },
 
   // Settings
   'settings.title': { en: 'Settings', he: 'הגדרות' },
@@ -139,6 +150,14 @@ export const HEBREW_NAMES: Record<string, string> = {
   'Zevachim': 'זבחים', 'Menachos': 'מנחות', 'Chullin': 'חולין', 'Bechoros': 'בכורות',
   'Arachin': 'ערכין', 'Temurah': 'תמורה', 'Kerisus': 'כריתות', 'Meilah': 'מעילה',
   'Tamid': 'תמיד', 'Middos': 'מידות', 'Kinnim': 'קינים', 'Niddah': 'נדה',
+  // Zeraim masechtos (Mishna only)
+  'Peah': 'פאה', 'Demai': 'דמאי', 'Kilayim': 'כלאים', 'Sheviis': 'שביעית',
+  'Terumos': 'תרומות', 'Maasros': 'מעשרות', 'Maaser Sheni': 'מעשר שני',
+  'Challah': 'חלה', 'Orlah': 'ערלה', 'Bikkurim': 'ביכורים',
+  // Taharos masechtos
+  'Keilim': 'כלים', 'Ohalos': 'אהלות', 'Negaim': 'נגעים', 'Parah': 'פרה',
+  'Taharos': 'טהרות', 'Mikvaos': 'מקואות', 'Machshirin': 'מכשירין',
+  'Zavim': 'זבים', 'Tevul Yom': 'טבול יום', 'Yadayim': 'ידים', 'Uktzin': 'עוקצין',
   // Nach
   'Yehoshua': 'יהושע', 'Shoftim': 'שופטים', 'Shmuel I': 'שמואל א', 'Shmuel II': 'שמואל ב',
   'Melachim I': 'מלכים א', 'Melachim II': 'מלכים ב', 'Yeshayahu': 'ישעיהו', 'Yirmiyahu': 'ירמיהו',
@@ -148,25 +167,66 @@ export const HEBREW_NAMES: Record<string, string> = {
   'Divrei HaYamim I': 'דברי הימים א', 'Divrei HaYamim II': 'דברי הימים ב',
 };
 
+// Convert a positive integer to its Hebrew gematria representation.
+// Handles 1..9999. Inserts geresh/gershayim per convention.
+export function numberToGematria(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return String(n);
+  const ones = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט'];
+  const tens = ['', 'י', 'כ', 'ל', 'מ', 'נ', 'ס', 'ע', 'פ', 'צ'];
+  const hundreds = ['', 'ק', 'ר', 'ש', 'ת'];
+
+  function under1000(num: number): string {
+    let s = '';
+    let h = Math.floor(num / 100);
+    while (h > 4) { s += 'ת'; h -= 4; }
+    s += hundreds[h];
+    let rem = num % 100;
+    // Special cases for 15 and 16 (avoid spelling God's name)
+    if (rem === 15) return s + 'טו';
+    if (rem === 16) return s + 'טז';
+    const t = Math.floor(rem / 10);
+    const o = rem % 10;
+    s += tens[t] + ones[o];
+    return s;
+  }
+
+  let result = '';
+  if (n >= 1000) {
+    const thousands = Math.floor(n / 1000);
+    result += under1000(thousands) + "'";
+    n = n % 1000;
+    if (n === 0) return result;
+  }
+  const body = under1000(n);
+  // Add gershayim (״) before last letter if length > 1, else geresh (׳)
+  if (body.length === 1) result += body + '׳';
+  else result += body.slice(0, -1) + '״' + body.slice(-1);
+  return result;
+}
+
 // Translate a category/subcategory display name. In 'en', returns as-is.
-// In 'he' or 'mixed', tries the dictionary, then translates "Perek N" / "Mishna N"
-// / "Siman N" / "Sif N" / "Daf N" patterns to Hebrew.
+// In 'he' or 'mixed', tries the dictionary, then translates patterns.
 export function translateName(name: string, lang: Language): string {
   if (lang === 'en') return name;
   if (HEBREW_NAMES[name]) return HEBREW_NAMES[name];
-  // Generic patterns
+  // Generic patterns — convert numbers to gematria letters
   const m1 = name.match(/^Perek (\d+)$/);
-  if (m1) return `פרק ${m1[1]}`;
+  if (m1) return `פרק ${numberToGematria(parseInt(m1[1], 10))}`;
   const m2 = name.match(/^Mishna (\d+)$/);
-  if (m2) return `משנה ${m2[1]}`;
+  if (m2) return `משנה ${numberToGematria(parseInt(m2[1], 10))}`;
   const m3 = name.match(/^Siman (\d+)$/);
-  if (m3) return `סימן ${m3[1]}`;
+  if (m3) return `סימן ${numberToGematria(parseInt(m3[1], 10))}`;
   const m4 = name.match(/^Sif (\d+)$/);
-  if (m4) return `סעיף ${m4[1]}`;
+  if (m4) return `סעיף ${numberToGematria(parseInt(m4[1], 10))}`;
   const m5 = name.match(/^Pasuk (\d+)$/);
-  if (m5) return `פסוק ${m5[1]}`;
+  if (m5) return `פסוק ${numberToGematria(parseInt(m5[1], 10))}`;
+  // "Daf 2a (Amud Aleph)" or "Daf 2"
   const m6 = name.match(/^Daf (\d+)([ab])?\s*(?:\(.*\))?$/);
-  if (m6) return `דף ${m6[1]}${m6[2] ? (m6[2] === 'a' ? ' ע"א' : ' ע"ב') : ''}`;
+  if (m6) {
+    const numLetters = numberToGematria(parseInt(m6[1], 10));
+    const amud = m6[2] === 'a' ? ' ע״א' : m6[2] === 'b' ? ' ע״ב' : '';
+    return `דף ${numLetters}${amud}`;
+  }
   return name;
 }
 
