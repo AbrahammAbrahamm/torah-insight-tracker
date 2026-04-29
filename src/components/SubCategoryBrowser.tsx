@@ -171,6 +171,19 @@ function SubCategoryNode({
             <CheckCheck className="w-3.5 h-3.5" />
           </button>
         )}
+        {hasChildren && pct > 0 && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onUnlogAll(node, path);
+            }}
+            className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            title="Unlog all below"
+            aria-label="Unlog all below"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
 
       <AnimatePresence>
