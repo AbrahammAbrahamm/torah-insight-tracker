@@ -10,7 +10,8 @@ export type { SubCategory } from './category-structures';
 const BUILTIN_STRUCTURES: Record<string, SubCategory[]> = {
   gemara: GEMARA_STRUCTURE,
   mishnayos: MISHNAYOS_STRUCTURE,
-  tanach: TANACH_STRUCTURE,
+  chumash: CHUMASH_STRUCTURE,
+  nach: TANACH_NACH_STRUCTURE,
   halacha: HALACHA_STRUCTURE,
 };
 
