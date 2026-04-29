@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { SubCategory } from '@/lib/category-structures';
-import { ChevronRight, ChevronDown, BookOpen, CheckCircle2, CheckCheck } from 'lucide-react';
+import { ChevronRight, ChevronDown, BookOpen, CheckCircle2, CheckCheck, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useEntries, useCategories, LearningEntry, LearningComponent } from '@/lib/store';
@@ -94,6 +94,7 @@ function SubCategoryNode({
   entries,
   onLogLeaf,
   onLogAll,
+  onUnlogAll,
 }: {
   node: SubCategory;
   depth?: number;
@@ -102,6 +103,7 @@ function SubCategoryNode({
   entries: LearningEntry[];
   onLogLeaf: (unitLabel: string) => void;
   onLogAll: (node: SubCategory, path: string[]) => void;
+  onUnlogAll: (node: SubCategory, path: string[]) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const { tn } = useI18n();
@@ -169,6 +171,19 @@ function SubCategoryNode({
             <CheckCheck className="w-3.5 h-3.5" />
           </button>
         )}
+        {hasChildren && pct > 0 && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onUnlogAll(node, path);
+            }}
+            className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            title="Unlog all below"
+            aria-label="Unlog all below"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
 
       <AnimatePresence>
@@ -190,6 +205,7 @@ function SubCategoryNode({
                 entries={entries}
                 onLogLeaf={onLogLeaf}
                 onLogAll={onLogAll}
+                onUnlogAll={onUnlogAll}
               />
             ))}
           </motion.div>
@@ -205,7 +221,7 @@ function generateId() {
 
 export function SubCategoryBrowser({ subcategories, categoryName, categoryId }: SubCategoryBrowserProps) {
   const navigate = useNavigate();
-  const { entries, addEntries } = useEntries();
+  const { entries, addEntries, setEntries } = useEntries();
   const { categories } = useCategories();
   const { t, tn } = useI18n();
 
@@ -254,14 +270,26 @@ export function SubCategoryBrowser({ subcategories, categoryName, categoryId }: 
     toast.success(`Logged ${newEntries.length} units in ${tn(node.name)}`);
   };
 
+  const handleUnlogAll = (node: SubCategory, path: string[]) => {
+    const labels: string[] = [];
+    collectLeafLabels(node, path, labels);
+    if (labels.length === 0) return;
+    const needles = labels.map(l => l.toLowerCase());
+    const before = entries.length;
+    const remaining = entries.filter(
+      e => !(e.categoryId === categoryId && needles.some(n => e.unit.toLowerCase().includes(n)))
+    );
+    const removed = before - remaining.length;
+    if (removed === 0) {
+      toast.info('Nothing to unlog');
+      return;
+    }
+    setEntries(remaining);
+    toast.success(`Unlogged ${removed} entries in ${tn(node.name)}`);
+  };
+
   return (
     <div className="bg-card border rounded-xl overflow-hidden">
-      <div className="px-4 py-3 border-b bg-secondary/30">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          {tn(categoryName)} {t('categories.structure')}
-        </h3>
-        <p className="text-[10px] text-muted-foreground mt-0.5">{t('categories.tapToLog')}</p>
-      </div>
       <div className="max-h-[400px] overflow-y-auto py-1">
         {subcategories.map(node => (
           <SubCategoryNode
@@ -271,6 +299,7 @@ export function SubCategoryBrowser({ subcategories, categoryName, categoryId }: 
             entries={entries}
             onLogLeaf={handleLogLeaf}
             onLogAll={handleLogAll}
+            onUnlogAll={handleUnlogAll}
           />
         ))}
       </div>

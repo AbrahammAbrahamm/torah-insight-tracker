@@ -1,6 +1,6 @@
 // Local storage based store for Torah learning data
 import { useState, useEffect, useCallback } from 'react';
-import { SubCategory, GEMARA_STRUCTURE, TANACH_STRUCTURE, MISHNAYOS_STRUCTURE, HALACHA_STRUCTURE } from './category-structures';
+import { SubCategory, GEMARA_STRUCTURE, TANACH_STRUCTURE, MISHNAYOS_STRUCTURE, HALACHA_STRUCTURE, CHUMASH_STRUCTURE, TANACH_NACH_STRUCTURE } from './category-structures';
 
 export type { SubCategory } from './category-structures';
 
@@ -10,7 +10,8 @@ export type { SubCategory } from './category-structures';
 const BUILTIN_STRUCTURES: Record<string, SubCategory[]> = {
   gemara: GEMARA_STRUCTURE,
   mishnayos: MISHNAYOS_STRUCTURE,
-  tanach: TANACH_STRUCTURE,
+  chumash: CHUMASH_STRUCTURE,
+  nach: TANACH_NACH_STRUCTURE,
   halacha: HALACHA_STRUCTURE,
 };
 
@@ -112,15 +113,26 @@ const DEFAULT_CATEGORIES: StudyCategory[] = [
     subcategories: HALACHA_STRUCTURE,
   },
   {
-    id: 'tanach',
-    name: 'Tanach',
+    id: 'chumash',
+    name: 'Chumash',
     icon: '📗',
     unitType: 'pasuk',
     defaultComponents: ['Pasuk', 'Rashi', 'Targum', 'Ramban'],
     color: '38 70% 50%',
     trackByLines: false,
     structure: 'tanach',
-    subcategories: TANACH_STRUCTURE,
+    subcategories: CHUMASH_STRUCTURE,
+  },
+  {
+    id: 'nach',
+    name: 'Nach',
+    icon: '📘',
+    unitType: 'perek',
+    defaultComponents: ['Pasuk', 'Rashi'],
+    color: '200 50% 45%',
+    trackByLines: false,
+    structure: 'tanach',
+    subcategories: TANACH_NACH_STRUCTURE,
   },
 ];
 
@@ -145,11 +157,26 @@ function saveToStorage<T>(key: string, value: T): void {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+function migrateCategories(cats: StudyCategory[]): StudyCategory[] {
+  // Replace legacy "tanach" category with separate "chumash" and "nach".
+  const hasTanach = cats.some(c => c.id === 'tanach');
+  let result = cats;
+  if (hasTanach) {
+    const chumashDefaults = DEFAULT_CATEGORIES.find(c => c.id === 'chumash')!;
+    const nachDefaults = DEFAULT_CATEGORIES.find(c => c.id === 'nach')!;
+    result = cats.flatMap(c => {
+      if (c.id === 'tanach') {
+        return [chumashDefaults, nachDefaults].filter(d => !cats.some(x => x.id === d.id));
+      }
+      return [c];
+    });
+  }
+  return result.map(withDefaultSubcategories);
+}
+
 export function useCategories() {
   const [categories, setCategories] = useState<StudyCategory[]>(() =>
-    loadFromStorage<StudyCategory[]>('torahTracker_categories', DEFAULT_CATEGORIES)
-      .filter(c => c.id !== 'chumash')
-      .map(withDefaultSubcategories)
+    migrateCategories(loadFromStorage<StudyCategory[]>('torahTracker_categories', DEFAULT_CATEGORIES))
   );
 
   useEffect(() => {
