@@ -256,12 +256,6 @@ export function SubCategoryBrowser({ subcategories, categoryName, categoryId }: 
 
   return (
     <div className="bg-card border rounded-xl overflow-hidden">
-      <div className="px-4 py-3 border-b bg-secondary/30">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          {tn(categoryName)} {t('categories.structure')}
-        </h3>
-        <p className="text-[10px] text-muted-foreground mt-0.5">{t('categories.tapToLog')}</p>
-      </div>
       <div className="max-h-[400px] overflow-y-auto py-1">
         {subcategories.map(node => (
           <SubCategoryNode
