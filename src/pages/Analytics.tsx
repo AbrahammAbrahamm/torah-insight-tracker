@@ -272,8 +272,109 @@ export default function Analytics() {
         </div>
       </motion.div>
 
+      {/* Highlights */}
+      <motion.div
+        className="grid grid-cols-2 gap-3 mb-6"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.12 }}
+      >
+        <div className="bg-card border rounded-xl p-3 flex items-center gap-3">
+          <Trophy className="w-7 h-7 text-streak" />
+          <div className="min-w-0">
+            <p className="text-sm font-bold font-display truncate">{bestDayLabel}</p>
+            <p className="text-[11px] text-muted-foreground">{t('analytics.bestDay')}</p>
+          </div>
+        </div>
+        <div className="bg-card border rounded-xl p-3 flex items-center gap-3">
+          <TrendingUp className="w-7 h-7 text-primary" />
+          <div>
+            <p className="text-sm font-bold font-display">{avgPerDay}</p>
+            <p className="text-[11px] text-muted-foreground">{t('analytics.avgPerDay')}</p>
+          </div>
+        </div>
+        <div className="bg-card border rounded-xl p-3 flex items-center gap-3">
+          <BookOpen className="w-7 h-7 text-success" />
+          <div>
+            <p className="text-sm font-bold font-display">{totalEntries}</p>
+            <p className="text-[11px] text-muted-foreground">{t('analytics.totalEntries')}</p>
+          </div>
+        </div>
+        <div className="bg-card border rounded-xl p-3 flex items-center gap-3">
+          <Star className="w-7 h-7 text-accent" />
+          <div className="min-w-0">
+            <p className="text-sm font-bold font-display truncate">
+              {topCategory ? `${topCategory.icon} ${topCategory.name}` : '—'}
+            </p>
+            <p className="text-[11px] text-muted-foreground">{t('analytics.topCategory')}</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* 12-week heatmap */}
+      <motion.div
+        className="bg-card border rounded-xl p-4 mb-6"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+      >
+        <h2 className="text-sm font-semibold mb-3">{t('analytics.heatmap')}</h2>
+        <div className="flex gap-1 justify-center" dir="ltr">
+          {heatmap.map((week, wi) => (
+            <div key={wi} className="flex flex-col gap-1">
+              {week.map((day, di) => (
+                <div
+                  key={di}
+                  className={`w-3 h-3 rounded-sm ${heatColor(day.count)}`}
+                  title={`${day.date}: ${day.count}`}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center justify-end gap-1.5 mt-3 text-[10px] text-muted-foreground">
+          <span>{t('analytics.heatmapLess')}</span>
+          <span className="w-2.5 h-2.5 rounded-sm bg-secondary" />
+          <span className="w-2.5 h-2.5 rounded-sm bg-primary/25" />
+          <span className="w-2.5 h-2.5 rounded-sm bg-primary/45" />
+          <span className="w-2.5 h-2.5 rounded-sm bg-primary/70" />
+          <span className="w-2.5 h-2.5 rounded-sm bg-primary" />
+          <span>{t('analytics.heatmapMore')}</span>
+        </div>
+      </motion.div>
+
+      {/* By weekday */}
+      {totalEntries > 0 && (
+        <motion.div
+          className="bg-card border rounded-xl p-4 mb-6"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18 }}
+        >
+          <h2 className="text-sm font-semibold mb-3">{t('analytics.byWeekday')}</h2>
+          <div className="h-32">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={weekdayData}>
+                <XAxis dataKey="day" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis hide />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: '0.5rem',
+                    border: '1px solid hsl(var(--border))',
+                    backgroundColor: 'hsl(var(--card))',
+                    fontSize: '12px',
+                  }}
+                />
+                <Bar dataKey="count" fill="hsl(var(--accent))" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+      )}
+
       {/* Category Breakdown */}
       {categoryData.length > 0 && (
+
         <motion.div
           className="bg-card border rounded-xl p-4 mb-6"
           initial={{ opacity: 0, y: 16 }}
