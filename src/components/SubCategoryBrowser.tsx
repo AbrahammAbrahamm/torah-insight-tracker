@@ -221,7 +221,7 @@ function generateId() {
 
 export function SubCategoryBrowser({ subcategories, categoryName, categoryId }: SubCategoryBrowserProps) {
   const navigate = useNavigate();
-  const { entries, addEntries } = useEntries();
+  const { entries, addEntries, setEntries } = useEntries();
   const { categories } = useCategories();
   const { t, tn } = useI18n();
 
@@ -270,6 +270,24 @@ export function SubCategoryBrowser({ subcategories, categoryName, categoryId }: 
     toast.success(`Logged ${newEntries.length} units in ${tn(node.name)}`);
   };
 
+  const handleUnlogAll = (node: SubCategory, path: string[]) => {
+    const labels: string[] = [];
+    collectLeafLabels(node, path, labels);
+    if (labels.length === 0) return;
+    const needles = labels.map(l => l.toLowerCase());
+    const before = entries.length;
+    const remaining = entries.filter(
+      e => !(e.categoryId === categoryId && needles.some(n => e.unit.toLowerCase().includes(n)))
+    );
+    const removed = before - remaining.length;
+    if (removed === 0) {
+      toast.info('Nothing to unlog');
+      return;
+    }
+    setEntries(remaining);
+    toast.success(`Unlogged ${removed} entries in ${tn(node.name)}`);
+  };
+
   return (
     <div className="bg-card border rounded-xl overflow-hidden">
       <div className="max-h-[400px] overflow-y-auto py-1">
@@ -281,6 +299,7 @@ export function SubCategoryBrowser({ subcategories, categoryName, categoryId }: 
             entries={entries}
             onLogLeaf={handleLogLeaf}
             onLogAll={handleLogAll}
+            onUnlogAll={handleUnlogAll}
           />
         ))}
       </div>
