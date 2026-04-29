@@ -3,7 +3,7 @@ import { useEntries, useCategories, computeStreak, getCategoryStats, LearningEnt
 import { SubCategory } from '@/lib/category-structures';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts';
-import { Flame, Calendar, BookOpen, RotateCcw, Target } from 'lucide-react';
+import { Flame, Calendar, BookOpen, RotateCcw, Target, Trophy, TrendingUp, Star } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useI18n } from '@/lib/i18n';
 
