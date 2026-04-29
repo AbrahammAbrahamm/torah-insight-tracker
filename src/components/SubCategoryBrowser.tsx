@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { SubCategory } from '@/lib/category-structures';
-import { ChevronRight, ChevronDown, BookOpen, CheckCircle2, CheckCheck } from 'lucide-react';
+import { ChevronRight, ChevronDown, BookOpen, CheckCircle2, CheckCheck, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useEntries, useCategories, LearningEntry, LearningComponent } from '@/lib/store';
