@@ -157,11 +157,26 @@ function saveToStorage<T>(key: string, value: T): void {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+function migrateCategories(cats: StudyCategory[]): StudyCategory[] {
+  // Replace legacy "tanach" category with separate "chumash" and "nach".
+  const hasTanach = cats.some(c => c.id === 'tanach');
+  let result = cats;
+  if (hasTanach) {
+    const chumashDefaults = DEFAULT_CATEGORIES.find(c => c.id === 'chumash')!;
+    const nachDefaults = DEFAULT_CATEGORIES.find(c => c.id === 'nach')!;
+    result = cats.flatMap(c => {
+      if (c.id === 'tanach') {
+        return [chumashDefaults, nachDefaults].filter(d => !cats.some(x => x.id === d.id));
+      }
+      return [c];
+    });
+  }
+  return result.map(withDefaultSubcategories);
+}
+
 export function useCategories() {
   const [categories, setCategories] = useState<StudyCategory[]>(() =>
-    loadFromStorage<StudyCategory[]>('torahTracker_categories', DEFAULT_CATEGORIES)
-      .filter(c => c.id !== 'chumash')
-      .map(withDefaultSubcategories)
+    migrateCategories(loadFromStorage<StudyCategory[]>('torahTracker_categories', DEFAULT_CATEGORIES))
   );
 
   useEffect(() => {
