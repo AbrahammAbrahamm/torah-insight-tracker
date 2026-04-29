@@ -205,6 +205,7 @@ function SubCategoryNode({
                 entries={entries}
                 onLogLeaf={onLogLeaf}
                 onLogAll={onLogAll}
+                onUnlogAll={onUnlogAll}
               />
             ))}
           </motion.div>
