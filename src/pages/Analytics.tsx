@@ -131,6 +131,59 @@ export default function Analytics() {
       .slice(0, 8);
   }, [categories, entries]);
 
+  // Highlights
+  const totalEntries = filteredEntries.length;
+  const avgPerDay = uniqueDays > 0 ? (totalEntries / uniqueDays).toFixed(1) : '0';
+
+  const dayCounts = new Map<string, number>();
+  filteredEntries.forEach(e => dayCounts.set(e.date, (dayCounts.get(e.date) || 0) + 1));
+  let bestDay: { date: string; count: number } | null = null;
+  for (const [date, count] of dayCounts) {
+    if (!bestDay || count > bestDay.count) bestDay = { date, count };
+  }
+  const bestDayLabel = bestDay
+    ? `${bestDay.count} (${new Date(bestDay.date).toLocaleDateString('en', { month: 'short', day: 'numeric' })})`
+    : '—';
+
+  const topCategory = categoryData.slice().sort((a, b) => b.units - a.units)[0];
+
+  // Weekday distribution (Sun..Sat)
+  const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const weekdayData = weekdayLabels.map(label => ({ day: label, count: 0 }));
+  filteredEntries.forEach(e => {
+    const d = new Date(e.date);
+    weekdayData[d.getDay()].count += 1;
+  });
+
+  // 12-week heatmap (last 12 weeks ending this week, Sun-aligned).
+  const heatmapWeeks = 12;
+  const heatmapStart = new Date();
+  heatmapStart.setDate(heatmapStart.getDate() - heatmapStart.getDay() - (heatmapWeeks - 1) * 7);
+  const heatmap: { date: string; count: number }[][] = [];
+  let maxHeat = 0;
+  for (let w = 0; w < heatmapWeeks; w++) {
+    const week: { date: string; count: number }[] = [];
+    for (let d = 0; d < 7; d++) {
+      const day = new Date(heatmapStart);
+      day.setDate(heatmapStart.getDate() + w * 7 + d);
+      const ds = day.toISOString().split('T')[0];
+      const c = entries.filter(e => e.date === ds).length;
+      if (c > maxHeat) maxHeat = c;
+      week.push({ date: ds, count: c });
+    }
+    heatmap.push(week);
+  }
+  const heatColor = (c: number) => {
+    if (c === 0) return 'bg-secondary';
+    const intensity = maxHeat > 0 ? c / maxHeat : 0;
+    if (intensity > 0.75) return 'bg-primary';
+    if (intensity > 0.5) return 'bg-primary/70';
+    if (intensity > 0.25) return 'bg-primary/45';
+    return 'bg-primary/25';
+  };
+
+  const recentEntries = entries.slice(0, 5);
+
   return (
     <div className="pb-24 px-4 pt-6 max-w-lg mx-auto">
       <PageHeader title={t('analytics.title')} subtitle={t('analytics.subtitle')} />
