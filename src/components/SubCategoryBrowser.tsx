@@ -94,6 +94,7 @@ function SubCategoryNode({
   entries,
   onLogLeaf,
   onLogAll,
+  onUnlogAll,
 }: {
   node: SubCategory;
   depth?: number;
@@ -102,6 +103,7 @@ function SubCategoryNode({
   entries: LearningEntry[];
   onLogLeaf: (unitLabel: string) => void;
   onLogAll: (node: SubCategory, path: string[]) => void;
+  onUnlogAll: (node: SubCategory, path: string[]) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const { tn } = useI18n();
