@@ -196,7 +196,7 @@ export function useEntries() {
     setEntries(prev => prev.filter(e => e.id !== id));
   }, []);
 
-  return { entries, addEntry, updateEntry, removeEntry, setEntries };
+  return { entries, addEntry, addEntries, updateEntry, removeEntry, setEntries };
 }
 
 export function useGoals() {
