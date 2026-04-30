@@ -123,7 +123,17 @@ function SubCategoryNode({
   onLogAll: (node: SubCategory, path: string[]) => void;
   onUnlogAll: (node: SubCategory, path: string[]) => void;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const nodeKey = `torahTracker_open_${categoryId}_${[...path, node.name].join('>')}`;
+  const [isOpen, setIsOpen] = useState<boolean>(() => {
+    try { return sessionStorage.getItem(nodeKey) === '1'; } catch { return false; }
+  });
+  const toggleOpen = (next: boolean) => {
+    setIsOpen(next);
+    try {
+      if (next) sessionStorage.setItem(nodeKey, '1');
+      else sessionStorage.removeItem(nodeKey);
+    } catch {}
+  };
   const { tn } = useI18n();
   const hasChildren = node.children && node.children.length > 0;
   const currentPath = [...path, node.name];
@@ -136,7 +146,7 @@ function SubCategoryNode({
 
   const handleClick = () => {
     if (hasChildren) {
-      setIsOpen(!isOpen);
+      toggleOpen(!isOpen);
     } else {
       onLogLeaf(leafLabel);
     }

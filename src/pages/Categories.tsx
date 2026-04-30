@@ -1,15 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCategories, useEntries } from '@/lib/store';
 import { ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SubCategoryBrowser, getCategoryProgress } from '@/components/SubCategoryBrowser';
 import { useI18n } from '@/lib/i18n';
 
+const EXPANDED_CAT_KEY = 'torahTracker_expandedCat';
+
 export default function Categories() {
   const { categories } = useCategories();
   const { entries } = useEntries();
-  const [expandedCat, setExpandedCat] = useState<string | null>(null);
+  const [expandedCat, setExpandedCat] = useState<string | null>(() => {
+    try { return sessionStorage.getItem(EXPANDED_CAT_KEY); } catch { return null; }
+  });
   const { tn, isRtl } = useI18n();
+
+  useEffect(() => {
+    try {
+      if (expandedCat) sessionStorage.setItem(EXPANDED_CAT_KEY, expandedCat);
+      else sessionStorage.removeItem(EXPANDED_CAT_KEY);
+    } catch {}
+  }, [expandedCat]);
 
   return (
     <div className="pb-24 px-4 pt-6 max-w-lg mx-auto">
@@ -36,14 +47,14 @@ export default function Categories() {
                     setExpandedCat(isOpen ? null : cat.id);
                   }
                 }}
-                className={`bg-card border rounded-2xl p-5 transition-colors ${
+                className={`bg-card border rounded-2xl p-4 transition-colors ${
                   hasSubs ? 'cursor-pointer hover:bg-secondary/40' : ''
                 }`}
               >
-                <div className="flex items-center gap-4">
-                  <span className="text-4xl">{cat.icon}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">{cat.icon}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-2xl font-bold font-display leading-tight">{tn(cat.name)}</p>
+                    <p className="text-xl font-bold font-display leading-tight">{tn(cat.name)}</p>
                   </div>
                   {hasSubs && (
                     <ChevronRight className={`w-5 h-5 text-muted-foreground transition-transform ${isOpen ? 'rotate-90' : (isRtl ? 'rotate-180' : '')}`} />
