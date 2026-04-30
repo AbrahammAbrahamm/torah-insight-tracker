@@ -50,6 +50,7 @@ const STRINGS = {
   'log.linesReviewed': { en: 'Lines reviewed', he: 'שורות שנחזרו' },
   'log.addComponent': { en: 'Add component (e.g., Maharsha)', he: 'הוסף רכיב (לדוגמא, מהרש"א)' },
   'log.save': { en: 'Save Entry', he: 'שמור רישום' },
+  'log.goBack': { en: 'Go Back', he: 'חזור' },
   'log.fillUnit': { en: 'Please fill in the unit name', he: 'נא למלא את שם היחידה' },
   'log.entryLogged': { en: 'Entry logged!', he: 'הרישום נשמר!' },
 
