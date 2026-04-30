@@ -25,16 +25,13 @@ function getLeafProgress(entries: LearningEntry[], categoryId: string, unitLabel
     e => e.categoryId === categoryId && e.unit.toLowerCase().includes(needle)
   );
   if (matches.length === 0) return 0;
-  let best = 0;
+  // An item is considered learned if its FIRST component is marked learned.
+  // Additional components are extras that don't affect completion status.
   for (const e of matches) {
-    if (e.components.length === 0) {
-      best = Math.max(best, 1);
-    } else {
-      const learned = e.components.filter(c => c.learned).length;
-      best = Math.max(best, learned / e.components.length);
-    }
+    if (e.components.length === 0) return 1;
+    if (e.components[0].learned) return 1;
   }
-  return best;
+  return 0;
 }
 
 function getNodeProgress(
