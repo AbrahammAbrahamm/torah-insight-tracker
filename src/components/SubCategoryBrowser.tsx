@@ -146,7 +146,7 @@ function SubCategoryNode({
 
   const handleClick = () => {
     if (hasChildren) {
-      setIsOpen(!isOpen);
+      toggleOpen(!isOpen);
     } else {
       onLogLeaf(leafLabel);
     }
