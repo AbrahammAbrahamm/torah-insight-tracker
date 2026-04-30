@@ -171,7 +171,13 @@ function migrateCategories(cats: StudyCategory[]): StudyCategory[] {
       return [c];
     });
   }
-  return result.map(withDefaultSubcategories);
+  // Enforce canonical order for known built-in categories.
+  const ORDER = ['chumash', 'nach', 'mishnayos', 'gemara', 'halacha'];
+  const known = ORDER
+    .map(id => result.find(c => c.id === id))
+    .filter((c): c is StudyCategory => !!c);
+  const others = result.filter(c => !ORDER.includes(c.id));
+  return [...known, ...others].map(withDefaultSubcategories);
 }
 
 export function useCategories() {
