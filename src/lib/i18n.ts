@@ -121,6 +121,12 @@ export const HEBREW_NAMES: Record<string, string> = {
   'Mishnayos': 'משניות',
   'Halacha': 'הלכה',
   'Tanach': 'תנ"ך',
+  'Chumash': 'חומש',
+  'Nach': 'נ"ך',
+  'Trei Asar': 'תרי עשר',
+  'Hoshea': 'הושע', 'Yoel': 'יואל', 'Amos': 'עמוס', 'Ovadiah': 'עובדיה',
+  'Yonah': 'יונה', 'Michah': 'מיכה', 'Nachum': 'נחום', 'Chavakuk': 'חבקוק',
+  'Tzefaniah': 'צפניה', 'Chaggai': 'חגי', 'Zechariah': 'זכריה', 'Malachi': 'מלאכי',
   // Sedarim
   'Seder Zeraim': 'סדר זרעים',
   'Seder Moed': 'סדר מועד',
