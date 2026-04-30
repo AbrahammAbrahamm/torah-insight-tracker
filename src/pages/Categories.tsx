@@ -1,15 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCategories, useEntries } from '@/lib/store';
 import { ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SubCategoryBrowser, getCategoryProgress } from '@/components/SubCategoryBrowser';
 import { useI18n } from '@/lib/i18n';
 
+const EXPANDED_CAT_KEY = 'torahTracker_expandedCat';
+
 export default function Categories() {
   const { categories } = useCategories();
   const { entries } = useEntries();
-  const [expandedCat, setExpandedCat] = useState<string | null>(null);
+  const [expandedCat, setExpandedCat] = useState<string | null>(() => {
+    try { return sessionStorage.getItem(EXPANDED_CAT_KEY); } catch { return null; }
+  });
   const { tn, isRtl } = useI18n();
+
+  useEffect(() => {
+    try {
+      if (expandedCat) sessionStorage.setItem(EXPANDED_CAT_KEY, expandedCat);
+      else sessionStorage.removeItem(EXPANDED_CAT_KEY);
+    } catch {}
+  }, [expandedCat]);
 
   return (
     <div className="pb-24 px-4 pt-6 max-w-lg mx-auto">
