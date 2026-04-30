@@ -244,10 +244,11 @@ export function SubCategoryBrowser({ subcategories, categoryName, categoryId }: 
     }
 
     const newEntries: LearningEntry[] = labelsToLog.map(label => {
-      const components: LearningComponent[] = (cat?.defaultComponents || ['Learned']).map(name => ({
+      const compNames = cat?.defaultComponents?.length ? cat.defaultComponents : ['Learned'];
+      const components: LearningComponent[] = compNames.map((name, idx) => ({
         id: generateId(),
         name,
-        learned: true,
+        learned: idx === 0, // only first component marks the item as learned
         reviewed: false,
         reviewCount: 0,
         notes: '',
