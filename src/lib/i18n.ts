@@ -50,6 +50,7 @@ const STRINGS = {
   'log.linesReviewed': { en: 'Lines reviewed', he: 'שורות שנחזרו' },
   'log.addComponent': { en: 'Add component (e.g., Maharsha)', he: 'הוסף רכיב (לדוגמא, מהרש"א)' },
   'log.save': { en: 'Save Entry', he: 'שמור רישום' },
+  'log.goBack': { en: 'Go Back', he: 'חזור' },
   'log.fillUnit': { en: 'Please fill in the unit name', he: 'נא למלא את שם היחידה' },
   'log.entryLogged': { en: 'Entry logged!', he: 'הרישום נשמר!' },
 
@@ -121,6 +122,12 @@ export const HEBREW_NAMES: Record<string, string> = {
   'Mishnayos': 'משניות',
   'Halacha': 'הלכה',
   'Tanach': 'תנ"ך',
+  'Chumash': 'חומש',
+  'Nach': 'נ"ך',
+  'Trei Asar': 'תרי עשר',
+  'Hoshea': 'הושע', 'Yoel': 'יואל', 'Amos': 'עמוס', 'Ovadiah': 'עובדיה',
+  'Yonah': 'יונה', 'Michah': 'מיכה', 'Nachum': 'נחום', 'Chavakuk': 'חבקוק',
+  'Tzefaniah': 'צפניה', 'Chaggai': 'חגי', 'Zechariah': 'זכריה', 'Malachi': 'מלאכי',
   // Sedarim
   'Seder Zeraim': 'סדר זרעים',
   'Seder Moed': 'סדר מועד',

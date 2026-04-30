@@ -255,12 +255,20 @@ export default function LogEntry() {
           </div>
         </div>
 
-        <button
-          onClick={handleSave}
-          className="w-full bg-primary text-primary-foreground rounded-xl py-3 text-sm font-semibold"
-        >
-          {t('log.save')}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex-1 bg-secondary text-foreground rounded-xl py-3 text-sm font-semibold hover:bg-secondary/80 transition-colors"
+          >
+            {t('log.goBack')}
+          </button>
+          <button
+            onClick={handleSave}
+            className="flex-1 bg-primary text-primary-foreground rounded-xl py-3 text-sm font-semibold"
+          >
+            {t('log.save')}
+          </button>
+        </div>
       </div>
     </div>
   );

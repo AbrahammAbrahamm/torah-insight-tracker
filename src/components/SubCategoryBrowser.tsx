@@ -25,19 +25,16 @@ function getLeafProgress(entries: LearningEntry[], categoryId: string, unitLabel
     e => e.categoryId === categoryId && e.unit.toLowerCase().includes(needle)
   );
   if (matches.length === 0) return 0;
-  let best = 0;
+  // An item is considered learned if its FIRST component is marked learned.
+  // Additional components are extras that don't affect completion status.
   for (const e of matches) {
-    if (e.components.length === 0) {
-      best = Math.max(best, 1);
-    } else {
-      const learned = e.components.filter(c => c.learned).length;
-      best = Math.max(best, learned / e.components.length);
-    }
+    if (e.components.length === 0) return 1;
+    if (e.components[0].learned) return 1;
   }
-  return best;
+  return 0;
 }
 
-function getNodeProgress(
+export function getNodeProgress(
   node: SubCategory,
   categoryId: string,
   parentPath: string[],
@@ -53,6 +50,27 @@ function getNodeProgress(
   let completed = 0;
   for (const child of node.children) {
     const sub = getNodeProgress(child, categoryId, [...parentPath, node.name], entries);
+    totalFrac += sub.fraction * sub.leafCount;
+    leafCount += sub.leafCount;
+    completed += sub.completedLeaves;
+  }
+  return {
+    fraction: leafCount > 0 ? totalFrac / leafCount : 0,
+    leafCount,
+    completedLeaves: completed,
+  };
+}
+
+export function getCategoryProgress(
+  subcategories: SubCategory[],
+  categoryId: string,
+  entries: LearningEntry[]
+): { fraction: number; leafCount: number; completedLeaves: number } {
+  let totalFrac = 0;
+  let leafCount = 0;
+  let completed = 0;
+  for (const child of subcategories) {
+    const sub = getNodeProgress(child, categoryId, [], entries);
     totalFrac += sub.fraction * sub.leafCount;
     leafCount += sub.leafCount;
     completed += sub.completedLeaves;
@@ -158,28 +176,28 @@ function SubCategoryNode({
             {pct}%
           </span>
         </button>
-        {hasChildren && pct < 100 && (
+        {pct < 100 && (
           <button
             onClick={(e) => {
               e.stopPropagation();
               onLogAll(node, path);
             }}
             className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-success hover:bg-success/10"
-            title="Log all below as learned"
-            aria-label="Log all below as learned"
+            title={hasChildren ? 'Log all below as learned' : 'Mark as learned'}
+            aria-label={hasChildren ? 'Log all below as learned' : 'Mark as learned'}
           >
             <CheckCheck className="w-3.5 h-3.5" />
           </button>
         )}
-        {hasChildren && pct > 0 && (
+        {pct > 0 && (
           <button
             onClick={(e) => {
               e.stopPropagation();
               onUnlogAll(node, path);
             }}
             className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-            title="Unlog all below"
-            aria-label="Unlog all below"
+            title={hasChildren ? 'Unlog all below' : 'Unlog'}
+            aria-label={hasChildren ? 'Unlog all below' : 'Unlog'}
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -247,10 +265,11 @@ export function SubCategoryBrowser({ subcategories, categoryName, categoryId }: 
     }
 
     const newEntries: LearningEntry[] = labelsToLog.map(label => {
-      const components: LearningComponent[] = (cat?.defaultComponents || ['Learned']).map(name => ({
+      const compNames = cat?.defaultComponents?.length ? cat.defaultComponents : ['Learned'];
+      const components: LearningComponent[] = compNames.map((name, idx) => ({
         id: generateId(),
         name,
-        learned: true,
+        learned: idx === 0, // only first component marks the item as learned
         reviewed: false,
         reviewCount: 0,
         notes: '',
