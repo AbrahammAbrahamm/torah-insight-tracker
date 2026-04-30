@@ -47,14 +47,14 @@ export default function Categories() {
                     setExpandedCat(isOpen ? null : cat.id);
                   }
                 }}
-                className={`bg-card border rounded-2xl p-5 transition-colors ${
+                className={`bg-card border rounded-2xl p-4 transition-colors ${
                   hasSubs ? 'cursor-pointer hover:bg-secondary/40' : ''
                 }`}
               >
-                <div className="flex items-center gap-4">
-                  <span className="text-4xl">{cat.icon}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">{cat.icon}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-2xl font-bold font-display leading-tight">{tn(cat.name)}</p>
+                    <p className="text-xl font-bold font-display leading-tight">{tn(cat.name)}</p>
                   </div>
                   {hasSubs && (
                     <ChevronRight className={`w-5 h-5 text-muted-foreground transition-transform ${isOpen ? 'rotate-90' : (isRtl ? 'rotate-180' : '')}`} />
