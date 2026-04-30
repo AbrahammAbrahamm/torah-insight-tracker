@@ -34,7 +34,7 @@ function getLeafProgress(entries: LearningEntry[], categoryId: string, unitLabel
   return 0;
 }
 
-function getNodeProgress(
+export function getNodeProgress(
   node: SubCategory,
   categoryId: string,
   parentPath: string[],
@@ -50,6 +50,27 @@ function getNodeProgress(
   let completed = 0;
   for (const child of node.children) {
     const sub = getNodeProgress(child, categoryId, [...parentPath, node.name], entries);
+    totalFrac += sub.fraction * sub.leafCount;
+    leafCount += sub.leafCount;
+    completed += sub.completedLeaves;
+  }
+  return {
+    fraction: leafCount > 0 ? totalFrac / leafCount : 0,
+    leafCount,
+    completedLeaves: completed,
+  };
+}
+
+export function getCategoryProgress(
+  subcategories: SubCategory[],
+  categoryId: string,
+  entries: LearningEntry[]
+): { fraction: number; leafCount: number; completedLeaves: number } {
+  let totalFrac = 0;
+  let leafCount = 0;
+  let completed = 0;
+  for (const child of subcategories) {
+    const sub = getNodeProgress(child, categoryId, [], entries);
     totalFrac += sub.fraction * sub.leafCount;
     leafCount += sub.leafCount;
     completed += sub.completedLeaves;
