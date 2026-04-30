@@ -155,28 +155,28 @@ function SubCategoryNode({
             {pct}%
           </span>
         </button>
-        {hasChildren && pct < 100 && (
+        {pct < 100 && (
           <button
             onClick={(e) => {
               e.stopPropagation();
               onLogAll(node, path);
             }}
             className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-success hover:bg-success/10"
-            title="Log all below as learned"
-            aria-label="Log all below as learned"
+            title={hasChildren ? 'Log all below as learned' : 'Mark as learned'}
+            aria-label={hasChildren ? 'Log all below as learned' : 'Mark as learned'}
           >
             <CheckCheck className="w-3.5 h-3.5" />
           </button>
         )}
-        {hasChildren && pct > 0 && (
+        {pct > 0 && (
           <button
             onClick={(e) => {
               e.stopPropagation();
               onUnlogAll(node, path);
             }}
             className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-            title="Unlog all below"
-            aria-label="Unlog all below"
+            title={hasChildren ? 'Unlog all below' : 'Unlog'}
+            aria-label={hasChildren ? 'Unlog all below' : 'Unlog'}
           >
             <X className="w-3.5 h-3.5" />
           </button>
