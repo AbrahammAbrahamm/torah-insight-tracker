@@ -1,9 +1,56 @@
+import { useState, ReactNode } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useSettings, useEntries, useCategories, useGoals } from '@/lib/store';
-import { Download, Share2, Sun, Moon, Monitor, Palette, Bell, Layout, LogIn, Languages } from 'lucide-react';
+import { Download, Share2, Sun, Moon, Monitor, Palette, Bell, Layout, LogIn, Languages, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { CategoryManager } from '@/components/CategoryManager';
 import { useI18n, LANGUAGES, Language } from '@/lib/i18n';
+
+function CollapsibleSection({
+  title,
+  icon,
+  defaultOpen = false,
+  storageKey,
+  children,
+}: {
+  title: string;
+  icon?: ReactNode;
+  defaultOpen?: boolean;
+  storageKey: string;
+  children: ReactNode;
+}) {
+  const fullKey = `torahTracker_settings_open_${storageKey}`;
+  const [open, setOpen] = useState<boolean>(() => {
+    try {
+      const v = sessionStorage.getItem(fullKey);
+      if (v === '1') return true;
+      if (v === '0') return false;
+    } catch {}
+    return defaultOpen;
+  });
+  const toggle = () => {
+    setOpen(prev => {
+      const next = !prev;
+      try { sessionStorage.setItem(fullKey, next ? '1' : '0'); } catch {}
+      return next;
+    });
+  };
+  return (
+    <section className="mb-3">
+      <button
+        type="button"
+        onClick={toggle}
+        className="w-full flex items-center gap-2 px-3 py-2.5 bg-card border rounded-xl text-left hover:bg-secondary/40 transition-colors"
+        aria-expanded={open}
+      >
+        {icon}
+        <h2 className="text-sm font-semibold flex-1">{title}</h2>
+        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && <div className="mt-2">{children}</div>}
+    </section>
+  );
+}
 
 export default function SettingsPage() {
   const { settings, updateSettings } = useSettings();
@@ -12,7 +59,6 @@ export default function SettingsPage() {
   const { goals } = useGoals();
   const { t, lang, setLang } = useI18n();
 
-  // Apply theme
   const applyTheme = (theme: 'light' | 'dark' | 'system') => {
     updateSettings({ theme });
     const root = document.documentElement;
@@ -86,9 +132,7 @@ export default function SettingsPage() {
     <div className="pb-24 px-4 pt-6 max-w-lg mx-auto">
       <PageHeader title={t('settings.title')} subtitle={t('settings.subtitle')} />
 
-      {/* Account / Login */}
-      <section className="mb-6">
-        <h2 className="text-sm font-semibold mb-3">{t('settings.account')}</h2>
+      <CollapsibleSection title={t('settings.account')} storageKey="account" icon={<LogIn className="w-4 h-4 text-primary" />}>
         <button
           onClick={handleLogin}
           className="w-full flex items-center gap-3 bg-card border rounded-xl p-4 text-left hover:bg-secondary/50 transition-colors"
@@ -99,14 +143,9 @@ export default function SettingsPage() {
             <p className="text-xs text-muted-foreground">{t('settings.loginDesc')}</p>
           </div>
         </button>
-      </section>
+      </CollapsibleSection>
 
-      {/* Language */}
-      <section className="mb-6">
-        <div className="flex items-center gap-2 mb-3">
-          <Languages className="w-4 h-4 text-primary" />
-          <h2 className="text-sm font-semibold">{t('settings.language')}</h2>
-        </div>
+      <CollapsibleSection title={t('settings.language')} storageKey="language" icon={<Languages className="w-4 h-4 text-primary" />}>
         <div className="bg-card border rounded-xl divide-y">
           {LANGUAGES.map(opt => (
             <button
@@ -130,14 +169,9 @@ export default function SettingsPage() {
             </button>
           ))}
         </div>
-      </section>
+      </CollapsibleSection>
 
-      {/* Theme */}
-      <section className="mb-6">
-        <div className="flex items-center gap-2 mb-3">
-          <Palette className="w-4 h-4 text-primary" />
-          <h2 className="text-sm font-semibold">{t('settings.theme')}</h2>
-        </div>
+      <CollapsibleSection title={t('settings.theme')} storageKey="theme" icon={<Palette className="w-4 h-4 text-primary" />}>
         <div className="flex gap-2">
           {themes.map(th => (
             <button
@@ -151,14 +185,9 @@ export default function SettingsPage() {
             </button>
           ))}
         </div>
-      </section>
+      </CollapsibleSection>
 
-      {/* Layout Density */}
-      <section className="mb-6">
-        <div className="flex items-center gap-2 mb-3">
-          <Layout className="w-4 h-4 text-primary" />
-          <h2 className="text-sm font-semibold">{t('settings.density')}</h2>
-        </div>
+      <CollapsibleSection title={t('settings.density')} storageKey="density" icon={<Layout className="w-4 h-4 text-primary" />}>
         <div className="flex gap-2">
           {densities.map(d => (
             <button
@@ -172,14 +201,9 @@ export default function SettingsPage() {
             </button>
           ))}
         </div>
-      </section>
+      </CollapsibleSection>
 
-      {/* Reminders */}
-      <section className="mb-6">
-        <div className="flex items-center gap-2 mb-3">
-          <Bell className="w-4 h-4 text-primary" />
-          <h2 className="text-sm font-semibold">{t('settings.reminders')}</h2>
-        </div>
+      <CollapsibleSection title={t('settings.reminders')} storageKey="reminders" icon={<Bell className="w-4 h-4 text-primary" />}>
         <div className="bg-card border rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm">{t('settings.enableReminders')}</span>
@@ -206,16 +230,13 @@ export default function SettingsPage() {
             </div>
           )}
         </div>
-      </section>
+      </CollapsibleSection>
 
-      {/* Categories management */}
-      <section className="mb-6">
+      <CollapsibleSection title={t('settings.categories') || 'Categories'} storageKey="categories">
         <CategoryManager />
-      </section>
+      </CollapsibleSection>
 
-      {/* Export & Share */}
-      <section className="mb-6">
-        <h2 className="text-sm font-semibold mb-3">{t('settings.exportShare')}</h2>
+      <CollapsibleSection title={t('settings.exportShare')} storageKey="exportShare">
         <div className="space-y-2">
           <button
             onClick={exportCSV}
@@ -238,10 +259,9 @@ export default function SettingsPage() {
             </div>
           </button>
         </div>
-      </section>
+      </CollapsibleSection>
 
-      {/* Data Info */}
-      <section className="mb-6">
+      <section className="mb-6 mt-4">
         <div className="bg-secondary/50 rounded-xl p-4 text-center">
           <p className="text-xs text-muted-foreground">
             {t('settings.dataLocal')}
