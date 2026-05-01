@@ -3,7 +3,7 @@ import { SubCategory } from '@/lib/category-structures';
 import { ChevronRight, ChevronDown, BookOpen, CheckCircle2, CheckCheck, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useEntries, useCategories, LearningEntry, LearningComponent } from '@/lib/store';
+import { useEntries, useCategories, LearningEntry, LearningComponent, unitsMatch } from '@/lib/store';
 import { useI18n } from '@/lib/i18n';
 import { toast } from 'sonner';
 
@@ -20,9 +20,8 @@ function buildUnitLabel(parentPath: string[], node: SubCategory): string {
 }
 
 function getLeafProgress(entries: LearningEntry[], categoryId: string, unitLabel: string): number {
-  const needle = unitLabel.toLowerCase();
   const matches = entries.filter(
-    e => e.categoryId === categoryId && e.unit.toLowerCase().includes(needle)
+    e => e.categoryId === categoryId && unitsMatch(e.unit, unitLabel, categoryId)
   );
   if (matches.length === 0) return 0;
   // An item is considered learned if its FIRST component is marked learned.
@@ -306,7 +305,7 @@ export function SubCategoryBrowser({ subcategories, categoryName, categoryId }: 
     const needles = labels.map(l => l.toLowerCase());
     const before = entries.length;
     const remaining = entries.filter(
-      e => !(e.categoryId === categoryId && needles.some(n => e.unit.toLowerCase().includes(n)))
+      e => !(e.categoryId === categoryId && needles.some(n => unitsMatch(e.unit, n, categoryId)))
     );
     const removed = before - remaining.length;
     if (removed === 0) {
