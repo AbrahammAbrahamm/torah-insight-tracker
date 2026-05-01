@@ -199,6 +199,13 @@ export function finalizeComponentsForSave(components: LearningComponent[]): Lear
   return normalized;
 }
 
+export function upsertEntryForUnit(entries: LearningEntry[], entry: LearningEntry): LearningEntry[] {
+  const withoutCurrentUnit = entries.filter(
+    e => !(e.categoryId === entry.categoryId && unitsMatch(e.unit, entry.unit, entry.categoryId))
+  );
+  return [entry, ...withoutCurrentUnit];
+}
+
 function migrateCategories(cats: StudyCategory[]): StudyCategory[] {
   // Replace legacy "tanach" category with separate "chumash" and "nach".
   const hasTanach = cats.some(c => c.id === 'tanach');
@@ -268,12 +275,7 @@ export function useEntries() {
   }, [persistEntries]);
 
   const saveEntry = useCallback((entry: LearningEntry) => {
-    persistEntries(prev => {
-      const withoutCurrentUnit = prev.filter(
-        e => !(e.categoryId === entry.categoryId && unitsMatch(e.unit, entry.unit, entry.categoryId))
-      );
-      return [entry, ...withoutCurrentUnit];
-    });
+    persistEntries(prev => upsertEntryForUnit(prev, entry));
   }, [persistEntries]);
 
   const addEntries = useCallback((newEntries: LearningEntry[]) => {
