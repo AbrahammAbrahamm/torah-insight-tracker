@@ -157,6 +157,55 @@ function saveToStorage<T>(key: string, value: T): void {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+export function normalizeUnitLabel(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\s*\([^)]*\)\s*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function unitsMatch(savedUnit: string, targetUnit: string, categoryId: string): boolean {
+  const saved = normalizeUnitLabel(savedUnit);
+  const target = normalizeUnitLabel(targetUnit);
+  if (saved === target) return true;
+  if (categoryId === 'gemara') {
+    return saved.replace(/\bdaf\s+/g, '') === target.replace(/\bdaf\s+/g, '');
+  }
+  return false;
+}
+
+export function findLatestEntryForUnit(
+  entries: LearningEntry[],
+  categoryId: string,
+  unit: string
+): LearningEntry | undefined {
+  return entries.find(e => e.categoryId === categoryId && unitsMatch(e.unit, unit, categoryId));
+}
+
+export function finalizeComponentsForSave(components: LearningComponent[]): LearningComponent[] {
+  const normalized = components.map(c => ({
+    ...c,
+    reviewCount: c.reviewCount ?? 0,
+    reviewed: c.reviewed || (c.reviewCount ?? 0) > 0,
+  }));
+
+  const anyLearned = normalized.some(c => c.learned);
+  if (anyLearned && normalized.length > 0 && !normalized[0].learned) {
+    return normalized.map((c, i) => i === 0 ? { ...c, learned: true } : c);
+  }
+
+  return normalized;
+}
+
+export function upsertEntryForUnit(entries: LearningEntry[], entry: LearningEntry): LearningEntry[] {
+  const withoutCurrentUnit = entries.filter(
+    e => !(e.categoryId === entry.categoryId && unitsMatch(e.unit, entry.unit, entry.categoryId))
+  );
+  return [entry, ...withoutCurrentUnit];
+}
+
 function migrateCategories(cats: StudyCategory[]): StudyCategory[] {
   // Replace legacy "tanach" category with separate "chumash" and "nach".
   const hasTanach = cats.some(c => c.id === 'tanach');
@@ -214,22 +263,41 @@ export function useEntries() {
   }, [entries]);
 
   const addEntry = useCallback((entry: LearningEntry) => {
-    setEntries(prev => [entry, ...prev]);
-  }, []);
+    const next = [entry, ...entries];
+    saveToStorage('torahTracker_entries', next);
+    setEntries(next);
+  }, [entries]);
+
+  const saveEntry = useCallback((entry: LearningEntry) => {
+    const next = upsertEntryForUnit(entries, entry);
+    saveToStorage('torahTracker_entries', next);
+    setEntries(next);
+  }, [entries]);
 
   const addEntries = useCallback((newEntries: LearningEntry[]) => {
-    setEntries(prev => [...newEntries, ...prev]);
-  }, []);
+    const next = [...newEntries, ...entries];
+    saveToStorage('torahTracker_entries', next);
+    setEntries(next);
+  }, [entries]);
 
   const updateEntry = useCallback((id: string, updates: Partial<LearningEntry>) => {
-    setEntries(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
-  }, []);
+    const next = entries.map(e => e.id === id ? { ...e, ...updates } : e);
+    saveToStorage('torahTracker_entries', next);
+    setEntries(next);
+  }, [entries]);
 
   const removeEntry = useCallback((id: string) => {
-    setEntries(prev => prev.filter(e => e.id !== id));
+    const next = entries.filter(e => e.id !== id);
+    saveToStorage('torahTracker_entries', next);
+    setEntries(next);
+  }, [entries]);
+
+  const replaceEntries = useCallback((next: LearningEntry[]) => {
+    saveToStorage('torahTracker_entries', next);
+    setEntries(next);
   }, []);
 
-  return { entries, addEntry, addEntries, updateEntry, removeEntry, setEntries };
+  return { entries, addEntry, saveEntry, addEntries, updateEntry, removeEntry, setEntries: replaceEntries };
 }
 
 export function useGoals() {

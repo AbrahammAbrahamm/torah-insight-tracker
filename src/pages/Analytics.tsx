@@ -1,5 +1,5 @@
 import { PageHeader } from '@/components/layout/PageHeader';
-import { useEntries, useCategories, computeStreak, getCategoryStats, LearningEntry } from '@/lib/store';
+import { useEntries, useCategories, computeStreak, getCategoryStats, LearningEntry, unitsMatch } from '@/lib/store';
 import { SubCategory } from '@/lib/category-structures';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts';
@@ -25,9 +25,8 @@ function buildUnitLabel(parentPath: string[], node: SubCategory): string {
 }
 
 function getLeafProgress(entries: LearningEntry[], categoryId: string, unitLabel: string): number {
-  const needle = unitLabel.toLowerCase();
   const matches = entries.filter(
-    e => e.categoryId === categoryId && e.unit.toLowerCase().includes(needle)
+    e => e.categoryId === categoryId && unitsMatch(e.unit, unitLabel, categoryId)
   );
   if (matches.length === 0) return 0;
   let best = 0;

@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { useCategories, useEntries, LearningComponent, LearningEntry } from '@/lib/store';
+import {
+  useCategories,
+  useEntries,
+  LearningComponent,
+  LearningEntry,
+  findLatestEntryForUnit,
+  finalizeComponentsForSave,
+} from '@/lib/store';
 import { Check, Plus, Minus, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -13,7 +20,7 @@ function generateId() {
 
 export default function LogEntry() {
   const { categories } = useCategories();
-  const { addEntry } = useEntries();
+  const { entries, saveEntry } = useEntries();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { t, tn } = useI18n();
@@ -31,20 +38,35 @@ export default function LogEntry() {
 
   useEffect(() => {
     if (selectedCategory) {
-      setComponents(
-        selectedCategory.defaultComponents.map(name => ({
-          id: generateId(),
-          name,
-          learned: false,
-          reviewed: false,
-          reviewCount: 0,
-          linesLearned: selectedCategory.trackByLines ? 0 : undefined,
-          linesReviewed: selectedCategory.trackByLines ? 0 : undefined,
-          notes: '',
-        }))
+      const existingEntry = unit.trim()
+        ? findLatestEntryForUnit(entries, categoryId, unit)
+        : undefined;
+      const savedByName = new Map(
+        existingEntry?.components.map(component => [component.name.toLowerCase(), component]) ?? []
       );
+      const defaultComponents = selectedCategory.defaultComponents.map(name => {
+        const saved = savedByName.get(name.toLowerCase());
+        return {
+          id: saved?.id || generateId(),
+          name,
+          learned: saved?.learned ?? false,
+          reviewed: saved?.reviewed ?? false,
+          reviewCount: saved?.reviewCount ?? 0,
+          notes: saved?.notes ?? '',
+        };
+      });
+      const customComponents = (existingEntry?.components ?? [])
+        .filter(component => !selectedCategory.defaultComponents.some(name => name.toLowerCase() === component.name.toLowerCase()))
+        .map(component => ({
+          ...component,
+          reviewCount: component.reviewCount ?? 0,
+          reviewed: component.reviewed || (component.reviewCount ?? 0) > 0,
+        }));
+
+      if (existingEntry) setDate(existingEntry.date);
+      setComponents([...defaultComponents, ...customComponents]);
     }
-  }, [categoryId]);
+  }, [categoryId, entries, selectedCategory]);
 
   const updateComponent = (id: string, updates: Partial<LearningComponent>) => {
     setComponents(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
@@ -58,8 +80,6 @@ export default function LogEntry() {
       learned: false,
       reviewed: false,
       reviewCount: 0,
-      linesLearned: selectedCategory?.trackByLines ? 0 : undefined,
-      linesReviewed: selectedCategory?.trackByLines ? 0 : undefined,
       notes: '',
     }]);
     setNewComponent('');
@@ -77,11 +97,7 @@ export default function LogEntry() {
 
     // If any component is marked learned, ensure the first component is also learned
     // so the unit registers as completed in the tree (which keys off the first component).
-    let finalComponents = components;
-    const anyLearned = components.some(c => c.learned);
-    if (anyLearned && components.length > 0 && !components[0].learned) {
-      finalComponents = components.map((c, i) => i === 0 ? { ...c, learned: true } : c);
-    }
+    const finalComponents = finalizeComponentsForSave(components);
 
     const entry: LearningEntry = {
       id: generateId(),
@@ -93,7 +109,7 @@ export default function LogEntry() {
       createdAt: new Date().toISOString(),
     };
 
-    addEntry(entry);
+    saveEntry(entry);
     toast.success(t('log.entryLogged'));
     navigate('/');
   };
