@@ -75,13 +75,21 @@ export default function LogEntry() {
       return;
     }
 
+    // If any component is marked learned, ensure the first component is also learned
+    // so the unit registers as completed in the tree (which keys off the first component).
+    let finalComponents = components;
+    const anyLearned = components.some(c => c.learned);
+    if (anyLearned && components.length > 0 && !components[0].learned) {
+      finalComponents = components.map((c, i) => i === 0 ? { ...c, learned: true } : c);
+    }
+
     const entry: LearningEntry = {
       id: generateId(),
       categoryId,
       date,
       unit: unit.trim(),
       unitType: selectedCategory?.unitType || 'custom',
-      components,
+      components: finalComponents,
       createdAt: new Date().toISOString(),
     };
 
