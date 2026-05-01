@@ -75,13 +75,21 @@ export default function LogEntry() {
       return;
     }
 
+    // If any component is marked learned, ensure the first component is also learned
+    // so the unit registers as completed in the tree (which keys off the first component).
+    let finalComponents = components;
+    const anyLearned = components.some(c => c.learned);
+    if (anyLearned && components.length > 0 && !components[0].learned) {
+      finalComponents = components.map((c, i) => i === 0 ? { ...c, learned: true } : c);
+    }
+
     const entry: LearningEntry = {
       id: generateId(),
       categoryId,
       date,
       unit: unit.trim(),
       unitType: selectedCategory?.unitType || 'custom',
-      components,
+      components: finalComponents,
       createdAt: new Date().toISOString(),
     };
 
@@ -178,55 +186,36 @@ export default function LogEntry() {
                   >
                     <BookOpen className="w-3.5 h-3.5" /> {t('log.learned')}{comp.learned ? ' ✓' : ''}
                   </button>
-                  <button
-                    onClick={() => updateComponent(comp.id, { reviewed: !comp.reviewed })}
-                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      comp.reviewed ? 'bg-primary/15 text-primary' : 'bg-secondary text-muted-foreground'
+                  <div
+                    className={`flex items-center rounded-lg overflow-hidden text-xs font-medium transition-colors ${
+                      comp.reviewCount > 0 ? 'bg-primary/15 text-primary' : 'bg-secondary text-muted-foreground'
                     }`}
                   >
-                    <Check className="w-3.5 h-3.5" /> {t('log.reviewed')}{comp.reviewed ? ' ✓' : ''}
-                  </button>
-                  <div className="flex items-center gap-1 bg-secondary rounded-lg px-2">
                     <button
-                      onClick={() => updateComponent(comp.id, { reviewCount: Math.max(0, comp.reviewCount - 1) })}
-                      className="p-1"
+                      onClick={() => updateComponent(comp.id, {
+                        reviewCount: Math.max(0, comp.reviewCount - 1),
+                        reviewed: Math.max(0, comp.reviewCount - 1) > 0,
+                      })}
+                      className="px-2 py-1.5"
+                      aria-label="Decrease review count"
                     >
-                      <Minus className="w-3 h-3 text-muted-foreground" />
+                      <Minus className="w-3 h-3" />
                     </button>
-                    <span className="text-xs font-medium min-w-[20px] text-center">{comp.reviewCount}×</span>
+                    <span className="flex items-center gap-1 px-1.5 py-1.5">
+                      <Check className="w-3.5 h-3.5" /> {t('log.reviewed')} {comp.reviewCount}×
+                    </span>
                     <button
-                      onClick={() => updateComponent(comp.id, { reviewCount: comp.reviewCount + 1 })}
-                      className="p-1"
+                      onClick={() => updateComponent(comp.id, {
+                        reviewCount: comp.reviewCount + 1,
+                        reviewed: true,
+                      })}
+                      className="px-2 py-1.5"
+                      aria-label="Increase review count"
                     >
-                      <Plus className="w-3 h-3 text-muted-foreground" />
+                      <Plus className="w-3 h-3" />
                     </button>
                   </div>
                 </div>
-
-                {selectedCategory?.trackByLines && (
-                  <div className="flex gap-3 mb-2">
-                    <div className="flex-1">
-                      <label className="text-[10px] text-muted-foreground">{t('log.linesLearned')}</label>
-                      <input
-                        type="number"
-                        min={0}
-                        className="w-full mt-0.5 px-2 py-1.5 bg-background border rounded-lg text-xs"
-                        value={comp.linesLearned || 0}
-                        onChange={e => updateComponent(comp.id, { linesLearned: parseInt(e.target.value) || 0 })}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-[10px] text-muted-foreground">{t('log.linesReviewed')}</label>
-                      <input
-                        type="number"
-                        min={0}
-                        className="w-full mt-0.5 px-2 py-1.5 bg-background border rounded-lg text-xs"
-                        value={comp.linesReviewed || 0}
-                        onChange={e => updateComponent(comp.id, { linesReviewed: parseInt(e.target.value) || 0 })}
-                      />
-                    </div>
-                  </div>
-                )}
 
                 <input
                   className="w-full px-2 py-1.5 bg-background border rounded-lg text-xs placeholder:text-muted-foreground/50"
