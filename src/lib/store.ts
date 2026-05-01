@@ -1,5 +1,5 @@
 // Local storage based store for Torah learning data
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type Dispatch, type SetStateAction } from 'react';
 import { SubCategory, GEMARA_STRUCTURE, TANACH_STRUCTURE, MISHNAYOS_STRUCTURE, HALACHA_STRUCTURE, CHUMASH_STRUCTURE, TANACH_NACH_STRUCTURE } from './category-structures';
 
 export type { SubCategory } from './category-structures';
@@ -155,6 +155,48 @@ function loadFromStorage<T>(key: string, fallback: T): T {
 
 function saveToStorage<T>(key: string, value: T): void {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+export function normalizeUnitLabel(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\s*\([^)]*\)\s*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function unitsMatch(savedUnit: string, targetUnit: string, categoryId: string): boolean {
+  const saved = normalizeUnitLabel(savedUnit);
+  const target = normalizeUnitLabel(targetUnit);
+  if (saved === target) return true;
+  if (categoryId === 'gemara') {
+    return saved.replace(/\bdaf\s+/g, '') === target.replace(/\bdaf\s+/g, '');
+  }
+  return false;
+}
+
+export function findLatestEntryForUnit(
+  entries: LearningEntry[],
+  categoryId: string,
+  unit: string
+): LearningEntry | undefined {
+  return entries.find(e => e.categoryId === categoryId && unitsMatch(e.unit, unit, categoryId));
+}
+
+export function finalizeComponentsForSave(components: LearningComponent[]): LearningComponent[] {
+  const normalized = components.map(c => ({
+    ...c,
+    reviewCount: c.reviewCount ?? 0,
+    reviewed: c.reviewed || (c.reviewCount ?? 0) > 0,
+  }));
+
+  const anyLearned = normalized.some(c => c.learned);
+  if (anyLearned && normalized.length > 0 && !normalized[0].learned) {
+    return normalized.map((c, i) => i === 0 ? { ...c, learned: true } : c);
+  }
+
+  return normalized;
 }
 
 function migrateCategories(cats: StudyCategory[]): StudyCategory[] {
