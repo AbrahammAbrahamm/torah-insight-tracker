@@ -259,6 +259,15 @@ export function useEntries() {
     setEntries(prev => [entry, ...prev]);
   }, []);
 
+  const saveEntry = useCallback((entry: LearningEntry) => {
+    setEntries(prev => {
+      const withoutCurrentUnit = prev.filter(
+        e => !(e.categoryId === entry.categoryId && unitsMatch(e.unit, entry.unit, entry.categoryId))
+      );
+      return [entry, ...withoutCurrentUnit];
+    });
+  }, []);
+
   const addEntries = useCallback((newEntries: LearningEntry[]) => {
     setEntries(prev => [...newEntries, ...prev]);
   }, []);
@@ -271,7 +280,7 @@ export function useEntries() {
     setEntries(prev => prev.filter(e => e.id !== id));
   }, []);
 
-  return { entries, addEntry, addEntries, updateEntry, removeEntry, setEntries };
+  return { entries, addEntry, saveEntry, addEntries, updateEntry, removeEntry, setEntries };
 }
 
 export function useGoals() {
