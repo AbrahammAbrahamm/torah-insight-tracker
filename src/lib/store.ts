@@ -262,33 +262,35 @@ export function useEntries() {
     saveToStorage('torahTracker_entries', entries);
   }, [entries]);
 
-  const persistEntries = useCallback((updater: (prev: LearningEntry[]) => LearningEntry[]) => {
-    setEntries(prev => {
-      const next = updater(prev);
-      saveToStorage('torahTracker_entries', next);
-      return next;
-    });
-  }, []);
-
   const addEntry = useCallback((entry: LearningEntry) => {
-    persistEntries(prev => [entry, ...prev]);
-  }, [persistEntries]);
+    const next = [entry, ...entries];
+    saveToStorage('torahTracker_entries', next);
+    setEntries(next);
+  }, [entries]);
 
   const saveEntry = useCallback((entry: LearningEntry) => {
-    persistEntries(prev => upsertEntryForUnit(prev, entry));
-  }, [persistEntries]);
+    const next = upsertEntryForUnit(entries, entry);
+    saveToStorage('torahTracker_entries', next);
+    setEntries(next);
+  }, [entries]);
 
   const addEntries = useCallback((newEntries: LearningEntry[]) => {
-    persistEntries(prev => [...newEntries, ...prev]);
-  }, [persistEntries]);
+    const next = [...newEntries, ...entries];
+    saveToStorage('torahTracker_entries', next);
+    setEntries(next);
+  }, [entries]);
 
   const updateEntry = useCallback((id: string, updates: Partial<LearningEntry>) => {
-    persistEntries(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
-  }, [persistEntries]);
+    const next = entries.map(e => e.id === id ? { ...e, ...updates } : e);
+    saveToStorage('torahTracker_entries', next);
+    setEntries(next);
+  }, [entries]);
 
   const removeEntry = useCallback((id: string) => {
-    persistEntries(prev => prev.filter(e => e.id !== id));
-  }, [persistEntries]);
+    const next = entries.filter(e => e.id !== id);
+    saveToStorage('torahTracker_entries', next);
+    setEntries(next);
+  }, [entries]);
 
   const replaceEntries = useCallback((next: LearningEntry[]) => {
     saveToStorage('torahTracker_entries', next);
