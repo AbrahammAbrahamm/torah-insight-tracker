@@ -1,5 +1,5 @@
 // Local storage based store for Torah learning data
-import { useState, useEffect, useCallback, type Dispatch, type SetStateAction } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { SubCategory, GEMARA_STRUCTURE, TANACH_STRUCTURE, MISHNAYOS_STRUCTURE, HALACHA_STRUCTURE, CHUMASH_STRUCTURE, TANACH_NACH_STRUCTURE } from './category-structures';
 
 export type { SubCategory } from './category-structures';
@@ -255,32 +255,45 @@ export function useEntries() {
     saveToStorage('torahTracker_entries', entries);
   }, [entries]);
 
-  const addEntry = useCallback((entry: LearningEntry) => {
-    setEntries(prev => [entry, ...prev]);
+  const persistEntries = useCallback((updater: (prev: LearningEntry[]) => LearningEntry[]) => {
+    setEntries(prev => {
+      const next = updater(prev);
+      saveToStorage('torahTracker_entries', next);
+      return next;
+    });
   }, []);
 
+  const addEntry = useCallback((entry: LearningEntry) => {
+    persistEntries(prev => [entry, ...prev]);
+  }, [persistEntries]);
+
   const saveEntry = useCallback((entry: LearningEntry) => {
-    setEntries(prev => {
+    persistEntries(prev => {
       const withoutCurrentUnit = prev.filter(
         e => !(e.categoryId === entry.categoryId && unitsMatch(e.unit, entry.unit, entry.categoryId))
       );
       return [entry, ...withoutCurrentUnit];
     });
-  }, []);
+  }, [persistEntries]);
 
   const addEntries = useCallback((newEntries: LearningEntry[]) => {
-    setEntries(prev => [...newEntries, ...prev]);
-  }, []);
+    persistEntries(prev => [...newEntries, ...prev]);
+  }, [persistEntries]);
 
   const updateEntry = useCallback((id: string, updates: Partial<LearningEntry>) => {
-    setEntries(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
-  }, []);
+    persistEntries(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
+  }, [persistEntries]);
 
   const removeEntry = useCallback((id: string) => {
-    setEntries(prev => prev.filter(e => e.id !== id));
+    persistEntries(prev => prev.filter(e => e.id !== id));
+  }, [persistEntries]);
+
+  const replaceEntries = useCallback((next: LearningEntry[]) => {
+    saveToStorage('torahTracker_entries', next);
+    setEntries(next);
   }, []);
 
-  return { entries, addEntry, saveEntry, addEntries, updateEntry, removeEntry, setEntries };
+  return { entries, addEntry, saveEntry, addEntries, updateEntry, removeEntry, setEntries: replaceEntries };
 }
 
 export function useGoals() {
