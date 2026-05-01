@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { getNodeProgress } from '@/components/SubCategoryBrowser';
+import { finalizeComponentsForSave, findLatestEntryForUnit, upsertEntryForUnit } from '@/lib/store';
 import type { LearningEntry, LearningComponent } from '@/lib/store';
 import type { SubCategory } from '@/lib/category-structures';
 
@@ -11,20 +12,13 @@ function buildEntryFromLogState(opts: {
   components: LearningComponent[];
   date?: string;
 }): LearningEntry {
-  let finalComponents = opts.components;
-  const anyLearned = opts.components.some(c => c.learned);
-  if (anyLearned && opts.components.length > 0 && !opts.components[0].learned) {
-    finalComponents = opts.components.map((c, i) =>
-      i === 0 ? { ...c, learned: true } : c
-    );
-  }
   return {
     id: 'test-id',
     categoryId: opts.categoryId,
     date: opts.date ?? '2026-05-01',
     unit: opts.unit,
     unitType: opts.unitType,
-    components: finalComponents,
+    components: finalizeComponentsForSave(opts.components),
     createdAt: new Date().toISOString(),
   };
 }
@@ -176,5 +170,52 @@ describe('LogEntry save → entry persistence', () => {
     const leafNode: SubCategory = { id: '2a', name: '2a (Amud Aleph)', totalUnits: 1 };
     const progress = getNodeProgress(leafNode, 'gemara', ['Seder Zeraim', 'Berachos'], loaded);
     expect(progress.fraction).toBe(1);
+  });
+
+  it('upserts a saved Daf immediately and restores learned + review state when reopened', () => {
+    const entry = buildEntryFromLogState({
+      categoryId: 'gemara',
+      unit: 'Shabbos Daf 2a',
+      unitType: 'daf',
+      components: [
+        comp('Gemara Text', { learned: true, reviewed: true, reviewCount: 2 }),
+        comp('Rashi'),
+      ],
+    });
+
+    const nextEntries = upsertEntryForUnit([], entry);
+    localStorage.setItem('torahTracker_entries', JSON.stringify(nextEntries));
+    const loaded: LearningEntry[] = JSON.parse(localStorage.getItem('torahTracker_entries') || '[]');
+
+    const reopened = findLatestEntryForUnit(loaded, 'gemara', 'Shabbos Daf 2a (Amud Aleph)');
+    expect(reopened).toBeDefined();
+    expect(reopened?.components[0].learned).toBe(true);
+    expect(reopened?.components[0].reviewed).toBe(true);
+    expect(reopened?.components[0].reviewCount).toBe(2);
+
+    const leafNode: SubCategory = { id: '2a', name: 'Daf 2a (Amud Aleph)', totalUnits: 1 };
+    const progress = getNodeProgress(leafNode, 'gemara', ['Seder Moed', 'Shabbos'], loaded);
+    expect(progress.fraction).toBe(1);
+    expect(progress.completedLeaves).toBe(1);
+  });
+
+  it('replaces the prior saved state for the same Daf instead of hiding it behind a duplicate', () => {
+    const oldEntry = buildEntryFromLogState({
+      categoryId: 'gemara',
+      unit: 'Shabbos Daf 2a (Amud Aleph)',
+      unitType: 'daf',
+      components: [comp('Gemara Text')],
+    });
+    const newEntry = buildEntryFromLogState({
+      categoryId: 'gemara',
+      unit: 'Shabbos Daf 2a',
+      unitType: 'daf',
+      components: [comp('Gemara Text', { learned: true, reviewed: true, reviewCount: 3 })],
+    });
+
+    const entries = upsertEntryForUnit([oldEntry], newEntry);
+    expect(entries).toHaveLength(1);
+    expect(entries[0].components[0].learned).toBe(true);
+    expect(entries[0].components[0].reviewCount).toBe(3);
   });
 });
