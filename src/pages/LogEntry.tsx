@@ -66,7 +66,7 @@ export default function LogEntry() {
       if (existingEntry) setDate(existingEntry.date);
       setComponents([...defaultComponents, ...customComponents]);
     }
-  }, [categoryId, entries, selectedCategory, unit]);
+  }, [categoryId, entries, selectedCategory]);
 
   const updateComponent = (id: string, updates: Partial<LearningComponent>) => {
     setComponents(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
