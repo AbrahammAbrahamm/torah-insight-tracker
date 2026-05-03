@@ -65,6 +65,13 @@ export default function SettingsPage() {
     });
   };
 
+  const [shareOptions, setShareOptions] = useState({
+    perCategory: true,
+    streak: true,
+    recent: false,
+    goals: true,
+  });
+
   const applyTheme = (theme: 'light' | 'dark' | 'system') => {
     updateSettings({ theme });
     const root = document.documentElement;
