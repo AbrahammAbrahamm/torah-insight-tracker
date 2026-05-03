@@ -1,6 +1,6 @@
 // Local storage based store for Torah learning data
 import { useState, useEffect, useCallback } from 'react';
-import { SubCategory, GEMARA_STRUCTURE, TANACH_STRUCTURE, MISHNAYOS_STRUCTURE, HALACHA_STRUCTURE, CHUMASH_STRUCTURE, TANACH_NACH_STRUCTURE } from './category-structures';
+import { SubCategory, GEMARA_STRUCTURE, TANACH_STRUCTURE, MISHNAYOS_STRUCTURE, HALACHA_STRUCTURE, CHUMASH_STRUCTURE, TANACH_NACH_STRUCTURE, MISHNAH_BERURAH_STRUCTURE } from './category-structures';
 
 export type { SubCategory } from './category-structures';
 
@@ -13,6 +13,7 @@ const BUILTIN_STRUCTURES: Record<string, SubCategory[]> = {
   chumash: CHUMASH_STRUCTURE,
   nach: TANACH_NACH_STRUCTURE,
   halacha: HALACHA_STRUCTURE,
+  'mishnah-berurah': MISHNAH_BERURAH_STRUCTURE,
 };
 
 function withDefaultSubcategories(cat: StudyCategory): StudyCategory {
@@ -70,12 +71,25 @@ export interface StudyGoal {
   current: number;
 }
 
+export type ReminderFrequency = 'daily' | 'weekdays' | 'weekly';
+
+export interface ReminderConfig {
+  id: string;
+  type: 'daf-yomi' | 'review-daf-yomi' | 'shnayim-mikra' | 'custom';
+  label: string;
+  enabled: boolean;
+  time: string; // HH:MM
+  frequency: ReminderFrequency;
+}
+
 export interface AppSettings {
   theme: 'light' | 'dark' | 'system';
   layoutDensity: 'compact' | 'comfortable' | 'spacious';
+  // Legacy global toggle (kept for back-compat with existing UI bits).
   reminderEnabled: boolean;
   reminderTime: string;
   reminderDays: number[];
+  reminders: ReminderConfig[];
 }
 
 const DEFAULT_CATEGORIES: StudyCategory[] = [
@@ -106,11 +120,22 @@ const DEFAULT_CATEGORIES: StudyCategory[] = [
     name: 'Halacha',
     icon: '⚖️',
     unitType: 'siman',
-    defaultComponents: ['Shulchan Aruch', 'Mishnah Berurah'],
+    defaultComponents: ['Shulchan Aruch'],
     color: '280 30% 45%',
     trackByLines: false,
     structure: 'custom',
     subcategories: HALACHA_STRUCTURE,
+  },
+  {
+    id: 'mishnah-berurah',
+    name: 'Mishnah Berurah',
+    icon: '📚',
+    unitType: 'sif-katan',
+    defaultComponents: ['Mishnah Berurah Text'],
+    color: '15 60% 45%',
+    trackByLines: false,
+    structure: 'custom',
+    subcategories: MISHNAH_BERURAH_STRUCTURE,
   },
   {
     id: 'chumash',
@@ -141,7 +166,12 @@ const DEFAULT_SETTINGS: AppSettings = {
   layoutDensity: 'comfortable',
   reminderEnabled: false,
   reminderTime: '09:00',
-  reminderDays: [0, 1, 2, 3, 4], // Sun-Thu
+  reminderDays: [0, 1, 2, 3, 4],
+  reminders: [
+    { id: 'daf-yomi', type: 'daf-yomi', label: 'Daf Yomi', enabled: false, time: '07:00', frequency: 'daily' },
+    { id: 'review-daf-yomi', type: 'review-daf-yomi', label: 'Review Daf Yomi', enabled: false, time: '21:00', frequency: 'daily' },
+    { id: 'shnayim-mikra', type: 'shnayim-mikra', label: 'Shnayim Mikra', enabled: false, time: '15:00', frequency: 'weekly' },
+  ],
 };
 
 function loadFromStorage<T>(key: string, fallback: T): T {
@@ -220,8 +250,20 @@ function migrateCategories(cats: StudyCategory[]): StudyCategory[] {
       return [c];
     });
   }
+  // Ensure Mishnah Berurah category exists as its own top-level category.
+  if (!result.some(c => c.id === 'mishnah-berurah')) {
+    const mb = DEFAULT_CATEGORIES.find(c => c.id === 'mishnah-berurah');
+    if (mb) result = [...result, mb];
+  }
+  // Remove legacy "Mishnah Berurah" from Halacha default components.
+  result = result.map(c => {
+    if (c.id === 'halacha' && c.defaultComponents?.some(n => /mishnah?\s*berurah/i.test(n))) {
+      return { ...c, defaultComponents: c.defaultComponents.filter(n => !/mishnah?\s*berurah/i.test(n)) };
+    }
+    return c;
+  });
   // Enforce canonical order for known built-in categories.
-  const ORDER = ['chumash', 'nach', 'mishnayos', 'gemara', 'halacha'];
+  const ORDER = ['chumash', 'nach', 'mishnayos', 'gemara', 'halacha', 'mishnah-berurah'];
   const known = ORDER
     .map(id => result.find(c => c.id === id))
     .filter((c): c is StudyCategory => !!c);
@@ -321,9 +363,10 @@ export function useGoals() {
 }
 
 export function useSettings() {
-  const [settings, setSettings] = useState<AppSettings>(() =>
-    loadFromStorage('torahTracker_settings', DEFAULT_SETTINGS)
-  );
+  const [settings, setSettings] = useState<AppSettings>(() => {
+    const loaded = loadFromStorage('torahTracker_settings', DEFAULT_SETTINGS);
+    return { ...DEFAULT_SETTINGS, ...loaded, reminders: loaded.reminders ?? DEFAULT_SETTINGS.reminders };
+  });
 
   useEffect(() => {
     saveToStorage('torahTracker_settings', settings);

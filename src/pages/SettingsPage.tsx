@@ -59,6 +59,19 @@ export default function SettingsPage() {
   const { goals } = useGoals();
   const { t, lang, setLang } = useI18n();
 
+  const updateReminder = (id: string, patch: Partial<typeof settings.reminders[number]>) => {
+    updateSettings({
+      reminders: settings.reminders.map(r => r.id === id ? { ...r, ...patch } : r),
+    });
+  };
+
+  const [shareOptions, setShareOptions] = useState({
+    perCategory: true,
+    streak: true,
+    recent: false,
+    goals: true,
+  });
+
   const applyTheme = (theme: 'light' | 'dark' | 'system') => {
     updateSettings({ theme });
     const root = document.documentElement;
@@ -102,14 +115,46 @@ export default function SettingsPage() {
     toast.success('CSV exported!');
   };
 
-  const shareProgress = async () => {
-    const text = `📚 Learning Progress\n${entries.length} units logged · ${categories.length} categories · ${goals.length} goals`;
-    if (navigator.share) {
-      await navigator.share({ title: 'Learning Progress', text });
-    } else {
-      navigator.clipboard.writeText(text);
-      toast.success('Progress copied to clipboard!');
+  const buildShareText = (opts: { perCategory: boolean; streak: boolean; recent: boolean; goals: boolean }) => {
+    const lines: string[] = ['📚 Learning Progress'];
+    lines.push(`${entries.length} entries logged across ${categories.length} categories`);
+    if (opts.perCategory) {
+      const byCat = categories.map(cat => {
+        const catEntries = entries.filter(e => e.categoryId === cat.id);
+        const units = new Set(catEntries.map(e => e.unit)).size;
+        if (units === 0) return null;
+        const unitWord = cat.unitType === 'daf' ? 'daf' : cat.unitType === 'siman' ? 'simanim' : cat.unitType === 'sif-katan' ? 'sif katanim' : cat.unitType + 's';
+        return `• ${cat.name}: ${units} ${unitWord}`;
+      }).filter(Boolean);
+      if (byCat.length) lines.push('', 'By category:', ...byCat as string[]);
     }
+    if (opts.streak) {
+      const dates = [...new Set(entries.map(e => e.date))];
+      lines.push('', `🔥 Active days: ${dates.length}`);
+    }
+    if (opts.goals && goals.length) {
+      lines.push('', `🎯 Goals: ${goals.length}`);
+    }
+    if (opts.recent) {
+      const recent = entries.slice(0, 5);
+      if (recent.length) {
+        lines.push('', 'Recent:');
+        recent.forEach(e => {
+          const cat = categories.find(c => c.id === e.categoryId);
+          lines.push(`• ${e.date} — ${cat?.name || e.categoryId}: ${e.unit}`);
+        });
+      }
+    }
+    return lines.join('\n');
+  };
+
+  const shareProgress = async () => {
+    const text = buildShareText(shareOptions);
+    if (navigator.share) {
+      try { await navigator.share({ title: 'Learning Progress', text }); return; } catch {}
+    }
+    navigator.clipboard.writeText(text);
+    toast.success('Progress copied to clipboard!');
   };
 
   const handleLogin = () => {
@@ -204,31 +249,46 @@ export default function SettingsPage() {
       </CollapsibleSection>
 
       <CollapsibleSection title={t('settings.reminders')} storageKey="reminders" icon={<Bell className="w-4 h-4 text-primary" />}>
-        <div className="bg-card border rounded-xl p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm">{t('settings.enableReminders')}</span>
-            <button
-              onClick={() => updateSettings({ reminderEnabled: !settings.reminderEnabled })}
-              className={`w-11 h-6 rounded-full transition-colors relative ${
-                settings.reminderEnabled ? 'bg-primary' : 'bg-secondary'
-              }`}
-            >
-              <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-primary-foreground shadow transition-transform ${
-                settings.reminderEnabled ? 'left-[22px]' : 'left-0.5'
-              }`} />
-            </button>
-          </div>
-          {settings.reminderEnabled && (
-            <div>
-              <label className="text-xs text-muted-foreground">{t('settings.reminderTime')}</label>
-              <input
-                type="time"
-                className="w-full mt-1 px-3 py-2 bg-background border rounded-lg text-sm"
-                value={settings.reminderTime}
-                onChange={e => updateSettings({ reminderTime: e.target.value })}
-              />
+        <div className="space-y-2">
+          {settings.reminders.map(r => (
+            <div key={r.id} className="bg-card border rounded-xl p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">{r.label}</span>
+                <button
+                  onClick={() => updateReminder(r.id, { enabled: !r.enabled })}
+                  className={`w-11 h-6 rounded-full transition-colors relative ${r.enabled ? 'bg-primary' : 'bg-secondary'}`}
+                  aria-label={`Toggle ${r.label}`}
+                >
+                  <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-primary-foreground shadow transition-transform ${r.enabled ? 'left-[22px]' : 'left-0.5'}`} />
+                </button>
+              </div>
+              {r.enabled && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-muted-foreground">Time</label>
+                    <input
+                      type="time"
+                      className="w-full mt-1 px-2 py-2 bg-background border rounded-lg text-sm"
+                      value={r.time}
+                      onChange={e => updateReminder(r.id, { time: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Frequency</label>
+                    <select
+                      className="w-full mt-1 px-2 py-2 bg-background border rounded-lg text-sm"
+                      value={r.frequency}
+                      onChange={e => updateReminder(r.id, { frequency: e.target.value as 'daily' | 'weekdays' | 'weekly' })}
+                    >
+                      <option value="daily">Daily</option>
+                      <option value="weekdays">Weekdays</option>
+                      <option value="weekly">Weekly</option>
+                    </select>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          ))}
         </div>
       </CollapsibleSection>
 
@@ -248,16 +308,39 @@ export default function SettingsPage() {
               <p className="text-xs text-muted-foreground">{t('settings.exportCsvDesc')}</p>
             </div>
           </button>
-          <button
-            onClick={shareProgress}
-            className="w-full flex items-center gap-3 bg-card border rounded-xl p-4 text-left hover:bg-secondary/50 transition-colors"
-          >
-            <Share2 className="w-5 h-5 text-accent" />
-            <div>
-              <p className="text-sm font-medium">{t('settings.shareProgress')}</p>
-              <p className="text-xs text-muted-foreground">{t('settings.shareProgressDesc')}</p>
+
+          <div className="bg-card border rounded-xl p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <Share2 className="w-5 h-5 text-accent" />
+              <div className="flex-1">
+                <p className="text-sm font-medium">{t('settings.shareProgress')}</p>
+                <p className="text-xs text-muted-foreground">Choose what to include</p>
+              </div>
             </div>
-          </button>
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                ['perCategory', 'Per-category counts'],
+                ['streak', 'Active days / streak'],
+                ['goals', 'Goals'],
+                ['recent', 'Recent entries'],
+              ] as const).map(([key, label]) => (
+                <label key={key} className="flex items-center gap-2 text-xs bg-background border rounded-lg px-2 py-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={shareOptions[key]}
+                    onChange={e => setShareOptions(prev => ({ ...prev, [key]: e.target.checked }))}
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+            <button
+              onClick={shareProgress}
+              className="w-full bg-primary text-primary-foreground rounded-lg py-2 text-sm font-semibold"
+            >
+              {t('settings.shareProgress')}
+            </button>
+          </div>
         </div>
       </CollapsibleSection>
 

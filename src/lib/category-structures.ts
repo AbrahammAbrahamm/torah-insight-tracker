@@ -344,3 +344,37 @@ export const HALACHA_STRUCTURE: SubCategory[] = [
   { id: 'even-haezer', name: 'Even HaEzer', children: generateSimanim('eh', EH_SIFIM) },
   { id: 'choshen-mishpat', name: 'Choshen Mishpat', children: generateSimanim('cm', CM_SIFIM) },
 ];
+
+// Mishnah Berurah — mirrors Orach Chaim: Siman → Sif → Sif Katan.
+// Sif Katan numbers come from the actual MB→OC link mapping (Sefaria).
+import MB_DATA from './mb-data.json';
+
+function generateMishnahBerurahSimanim(): SubCategory[] {
+  return (MB_DATA as number[][][]).map((sifim, simanIdx) => {
+    const simanNum = simanIdx + 1;
+    const sifChildren: SubCategory[] = sifim.map((sks, sifIdx) => {
+      const sifNum = sifIdx + 1;
+      const skChildren: SubCategory[] = sks.map(sk => ({
+        id: `mb-siman-${simanNum}-sif-${sifNum}-sk-${sk}`,
+        name: `Sif Katan ${sk}`,
+        totalUnits: 1,
+      }));
+      return {
+        id: `mb-siman-${simanNum}-sif-${sifNum}`,
+        name: `Sif ${sifNum}`,
+        totalUnits: Math.max(1, skChildren.length),
+        children: skChildren.length > 0 ? skChildren : undefined,
+      };
+    });
+    return {
+      id: `mb-siman-${simanNum}`,
+      name: `Siman ${simanNum}`,
+      totalUnits: sifChildren.length,
+      children: sifChildren,
+    };
+  });
+}
+
+export const MISHNAH_BERURAH_STRUCTURE: SubCategory[] = [
+  { id: 'mb-orach-chaim', name: 'Orach Chaim', children: generateMishnahBerurahSimanim() },
+];

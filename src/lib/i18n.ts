@@ -121,9 +121,22 @@ export const HEBREW_NAMES: Record<string, string> = {
   'Gemara': 'גמרא',
   'Mishnayos': 'משניות',
   'Halacha': 'הלכה',
+  'Mishnah Berurah': 'משנה ברורה',
   'Tanach': 'תנ"ך',
   'Chumash': 'חומש',
   'Nach': 'נ"ך',
+  // Components
+  'Gemara Text': 'גמרא',
+  'Rashi': 'רש"י',
+  'Tosfos': 'תוספות',
+  'Mishna': 'משנה',
+  'Bartenura': 'ברטנורא',
+  'Tosfos Yom Tov': 'תוספות יום טוב',
+  'Shulchan Aruch': 'שולחן ערוך',
+  'Mishnah Berurah Text': 'משנה ברורה',
+  'Pasuk': 'פסוק',
+  'Targum': 'תרגום',
+  'Ramban': 'רמב"ן',
   'Trei Asar': 'תרי עשר',
   'Hoshea': 'הושע', 'Yoel': 'יואל', 'Amos': 'עמוס', 'Ovadiah': 'עובדיה',
   'Yonah': 'יונה', 'Michah': 'מיכה', 'Nachum': 'נחום', 'Chavakuk': 'חבקוק',
@@ -225,6 +238,8 @@ export function translateName(name: string, lang: Language): string {
   if (m3) return `סימן ${numberToGematria(parseInt(m3[1], 10))}`;
   const m4 = name.match(/^Sif (\d+)$/);
   if (m4) return `סעיף ${numberToGematria(parseInt(m4[1], 10))}`;
+  const m4b = name.match(/^Sif Katan (\d+)$/);
+  if (m4b) return `סעיף קטן ${numberToGematria(parseInt(m4b[1], 10))}`;
   const m5 = name.match(/^Pasuk (\d+)$/);
   if (m5) return `פסוק ${numberToGematria(parseInt(m5[1], 10))}`;
   // "Daf 2a (Amud Aleph)" or "Daf 2"
