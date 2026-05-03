@@ -108,14 +108,46 @@ export default function SettingsPage() {
     toast.success('CSV exported!');
   };
 
-  const shareProgress = async () => {
-    const text = `📚 Learning Progress\n${entries.length} units logged · ${categories.length} categories · ${goals.length} goals`;
-    if (navigator.share) {
-      await navigator.share({ title: 'Learning Progress', text });
-    } else {
-      navigator.clipboard.writeText(text);
-      toast.success('Progress copied to clipboard!');
+  const buildShareText = (opts: { perCategory: boolean; streak: boolean; recent: boolean; goals: boolean }) => {
+    const lines: string[] = ['📚 Learning Progress'];
+    lines.push(`${entries.length} entries logged across ${categories.length} categories`);
+    if (opts.perCategory) {
+      const byCat = categories.map(cat => {
+        const catEntries = entries.filter(e => e.categoryId === cat.id);
+        const units = new Set(catEntries.map(e => e.unit)).size;
+        if (units === 0) return null;
+        const unitWord = cat.unitType === 'daf' ? 'daf' : cat.unitType === 'siman' ? 'simanim' : cat.unitType === 'sif-katan' ? 'sif katanim' : cat.unitType + 's';
+        return `• ${cat.name}: ${units} ${unitWord}`;
+      }).filter(Boolean);
+      if (byCat.length) lines.push('', 'By category:', ...byCat as string[]);
     }
+    if (opts.streak) {
+      const dates = [...new Set(entries.map(e => e.date))];
+      lines.push('', `🔥 Active days: ${dates.length}`);
+    }
+    if (opts.goals && goals.length) {
+      lines.push('', `🎯 Goals: ${goals.length}`);
+    }
+    if (opts.recent) {
+      const recent = entries.slice(0, 5);
+      if (recent.length) {
+        lines.push('', 'Recent:');
+        recent.forEach(e => {
+          const cat = categories.find(c => c.id === e.categoryId);
+          lines.push(`• ${e.date} — ${cat?.name || e.categoryId}: ${e.unit}`);
+        });
+      }
+    }
+    return lines.join('\n');
+  };
+
+  const shareProgress = async () => {
+    const text = buildShareText(shareOptions);
+    if (navigator.share) {
+      try { await navigator.share({ title: 'Learning Progress', text }); return; } catch {}
+    }
+    navigator.clipboard.writeText(text);
+    toast.success('Progress copied to clipboard!');
   };
 
   const handleLogin = () => {
