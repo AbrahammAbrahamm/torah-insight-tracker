@@ -59,6 +59,12 @@ export default function SettingsPage() {
   const { goals } = useGoals();
   const { t, lang, setLang } = useI18n();
 
+  const updateReminder = (id: string, patch: Partial<typeof settings.reminders[number]>) => {
+    updateSettings({
+      reminders: settings.reminders.map(r => r.id === id ? { ...r, ...patch } : r),
+    });
+  };
+
   const applyTheme = (theme: 'light' | 'dark' | 'system') => {
     updateSettings({ theme });
     const root = document.documentElement;
