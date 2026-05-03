@@ -232,6 +232,18 @@ function migrateCategories(cats: StudyCategory[]): StudyCategory[] {
       return [c];
     });
   }
+  // Ensure Mishnah Berurah category exists as its own top-level category.
+  if (!result.some(c => c.id === 'mishnah-berurah')) {
+    const mb = DEFAULT_CATEGORIES.find(c => c.id === 'mishnah-berurah');
+    if (mb) result = [...result, mb];
+  }
+  // Remove legacy "Mishnah Berurah" from Halacha default components.
+  result = result.map(c => {
+    if (c.id === 'halacha' && c.defaultComponents?.some(n => /mishnah?\s*berurah/i.test(n))) {
+      return { ...c, defaultComponents: c.defaultComponents.filter(n => !/mishnah?\s*berurah/i.test(n)) };
+    }
+    return c;
+  });
   // Enforce canonical order for known built-in categories.
   const ORDER = ['chumash', 'nach', 'mishnayos', 'gemara', 'halacha', 'mishnah-berurah'];
   const known = ORDER
