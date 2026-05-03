@@ -184,7 +184,7 @@ export default function LogEntry() {
                 className="bg-card border rounded-xl p-3"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">{comp.name}</span>
+                  <span className="text-sm font-medium">{tn(comp.name)}</span>
                   <button
                     onClick={() => removeComponent(comp.id)}
                     className="text-xs text-destructive/60 hover:text-destructive"
