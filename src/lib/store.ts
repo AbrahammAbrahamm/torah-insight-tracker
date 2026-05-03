@@ -233,7 +233,7 @@ function migrateCategories(cats: StudyCategory[]): StudyCategory[] {
     });
   }
   // Enforce canonical order for known built-in categories.
-  const ORDER = ['chumash', 'nach', 'mishnayos', 'gemara', 'halacha'];
+  const ORDER = ['chumash', 'nach', 'mishnayos', 'gemara', 'halacha', 'mishnah-berurah'];
   const known = ORDER
     .map(id => result.find(c => c.id === id))
     .filter((c): c is StudyCategory => !!c);
