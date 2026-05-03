@@ -71,12 +71,25 @@ export interface StudyGoal {
   current: number;
 }
 
+export type ReminderFrequency = 'daily' | 'weekdays' | 'weekly';
+
+export interface ReminderConfig {
+  id: string;
+  type: 'daf-yomi' | 'review-daf-yomi' | 'shnayim-mikra' | 'custom';
+  label: string;
+  enabled: boolean;
+  time: string; // HH:MM
+  frequency: ReminderFrequency;
+}
+
 export interface AppSettings {
   theme: 'light' | 'dark' | 'system';
   layoutDensity: 'compact' | 'comfortable' | 'spacious';
+  // Legacy global toggle (kept for back-compat with existing UI bits).
   reminderEnabled: boolean;
   reminderTime: string;
   reminderDays: number[];
+  reminders: ReminderConfig[];
 }
 
 const DEFAULT_CATEGORIES: StudyCategory[] = [
