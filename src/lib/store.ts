@@ -166,7 +166,12 @@ const DEFAULT_SETTINGS: AppSettings = {
   layoutDensity: 'comfortable',
   reminderEnabled: false,
   reminderTime: '09:00',
-  reminderDays: [0, 1, 2, 3, 4], // Sun-Thu
+  reminderDays: [0, 1, 2, 3, 4],
+  reminders: [
+    { id: 'daf-yomi', type: 'daf-yomi', label: 'Daf Yomi', enabled: false, time: '07:00', frequency: 'daily' },
+    { id: 'review-daf-yomi', type: 'review-daf-yomi', label: 'Review Daf Yomi', enabled: false, time: '21:00', frequency: 'daily' },
+    { id: 'shnayim-mikra', type: 'shnayim-mikra', label: 'Shnayim Mikra', enabled: false, time: '15:00', frequency: 'weekly' },
+  ],
 };
 
 function loadFromStorage<T>(key: string, fallback: T): T {
