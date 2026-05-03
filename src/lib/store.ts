@@ -363,9 +363,10 @@ export function useGoals() {
 }
 
 export function useSettings() {
-  const [settings, setSettings] = useState<AppSettings>(() =>
-    loadFromStorage('torahTracker_settings', DEFAULT_SETTINGS)
-  );
+  const [settings, setSettings] = useState<AppSettings>(() => {
+    const loaded = loadFromStorage('torahTracker_settings', DEFAULT_SETTINGS);
+    return { ...DEFAULT_SETTINGS, ...loaded, reminders: loaded.reminders ?? DEFAULT_SETTINGS.reminders };
+  });
 
   useEffect(() => {
     saveToStorage('torahTracker_settings', settings);
