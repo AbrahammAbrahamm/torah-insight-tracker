@@ -13,6 +13,7 @@ const BUILTIN_STRUCTURES: Record<string, SubCategory[]> = {
   chumash: CHUMASH_STRUCTURE,
   nach: TANACH_NACH_STRUCTURE,
   halacha: HALACHA_STRUCTURE,
+  'mishnah-berurah': MISHNAH_BERURAH_STRUCTURE,
 };
 
 function withDefaultSubcategories(cat: StudyCategory): StudyCategory {
