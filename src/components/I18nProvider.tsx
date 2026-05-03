@@ -9,7 +9,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored === 'en' || stored === 'he' || stored === 'mixed') return stored;
     } catch {}
-    return 'en';
+    return 'mixed';
   });
 
   const setLang = (l: Language) => {
