@@ -14,7 +14,144 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      learning_entries: {
+        Row: {
+          category_id: string
+          components: Json
+          created_at: string
+          date: string
+          duration: number | null
+          id: string
+          unit: string
+          unit_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          components?: Json
+          created_at?: string
+          date: string
+          duration?: number | null
+          id?: string
+          unit: string
+          unit_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          components?: Json
+          created_at?: string
+          date?: string
+          duration?: number | null
+          id?: string
+          unit?: string
+          unit_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      study_goals: {
+        Row: {
+          category_id: string
+          created_at: string
+          current: number
+          end_date: string | null
+          id: string
+          start_date: string | null
+          target: number
+          target_unit: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          current?: number
+          end_date?: string | null
+          id?: string
+          start_date?: string | null
+          target?: number
+          target_unit?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          current?: number
+          end_date?: string | null
+          id?: string
+          start_date?: string | null
+          target?: number
+          target_unit?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_categories: {
+        Row: {
+          categories: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          categories?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          categories?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          settings: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          settings?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          settings?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
