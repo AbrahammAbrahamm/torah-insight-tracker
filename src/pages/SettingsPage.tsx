@@ -58,6 +58,7 @@ export default function SettingsPage() {
   const { categories } = useCategories();
   const { goals } = useGoals();
   const { t, lang, setLang } = useI18n();
+  const { user, profile, signOut } = useAuth();
 
   const updateReminder = (id: string, patch: Partial<typeof settings.reminders[number]>) => {
     updateSettings({
