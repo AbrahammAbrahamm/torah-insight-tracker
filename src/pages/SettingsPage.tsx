@@ -5,6 +5,8 @@ import { Download, Share2, Sun, Moon, Monitor, Palette, Bell, Layout, LogIn, Lan
 import { toast } from 'sonner';
 import { CategoryManager } from '@/components/CategoryManager';
 import { useI18n, LANGUAGES, Language } from '@/lib/i18n';
+import { useAuth } from '@/contexts/AuthContext';
+import { LogOut } from 'lucide-react';
 
 function CollapsibleSection({
   title,
@@ -58,6 +60,7 @@ export default function SettingsPage() {
   const { categories } = useCategories();
   const { goals } = useGoals();
   const { t, lang, setLang } = useI18n();
+  const { user, profile, signOut } = useAuth();
 
   const updateReminder = (id: string, patch: Partial<typeof settings.reminders[number]>) => {
     updateSettings({
@@ -344,11 +347,24 @@ export default function SettingsPage() {
         </div>
       </CollapsibleSection>
 
-      <section className="mb-6 mt-4">
+      <section className="mb-6 mt-4 space-y-3">
+        <div className="bg-card border rounded-xl p-4">
+          <div className="flex items-center justify-between">
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Signed in as</p>
+              <p className="text-sm font-medium truncate">{profile?.display_name || user?.email}</p>
+              {profile?.display_name && <p className="text-xs text-muted-foreground truncate">{user?.email}</p>}
+            </div>
+            <button
+              onClick={async () => { await signOut(); }}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg bg-secondary hover:bg-secondary/80"
+            >
+              <LogOut className="w-4 h-4" /> Sign out
+            </button>
+          </div>
+        </div>
         <div className="bg-secondary/50 rounded-xl p-4 text-center">
           <p className="text-xs text-muted-foreground">
-            {t('settings.dataLocal')}
-            <br />
             {entries.length} {t('settings.entries')} · {categories.length} {t('settings.categoriesCount')} · {goals.length} {t('settings.goalsCount')}
           </p>
         </div>

@@ -1,6 +1,8 @@
-// Local storage based store for Torah learning data
-import { useState, useEffect, useCallback } from 'react';
+// Supabase-backed store for Torah learning data (with localStorage migration)
+import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode, createElement } from 'react';
 import { SubCategory, GEMARA_STRUCTURE, TANACH_STRUCTURE, MISHNAYOS_STRUCTURE, HALACHA_STRUCTURE, CHUMASH_STRUCTURE, TANACH_NACH_STRUCTURE, MISHNAH_BERURAH_STRUCTURE } from './category-structures';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type { SubCategory } from './category-structures';
 
@@ -271,113 +273,383 @@ function migrateCategories(cats: StudyCategory[]): StudyCategory[] {
   return [...known, ...others].map(withDefaultSubcategories);
 }
 
-export function useCategories() {
-  const [categories, setCategories] = useState<StudyCategory[]>(() =>
-    migrateCategories(loadFromStorage<StudyCategory[]>('torahTracker_categories', DEFAULT_CATEGORIES))
-  );
+// ============================================================
+// Supabase-backed DataProvider (replaces localStorage hooks)
+// ============================================================
 
+interface DataContextValue {
+  loading: boolean;
+  error: string | null;
+  categories: StudyCategory[];
+  setCategories: (cats: StudyCategory[]) => void;
+  addCategory: (cat: StudyCategory) => void;
+  updateCategory: (id: string, updates: Partial<StudyCategory>) => void;
+  removeCategory: (id: string) => void;
+  entries: LearningEntry[];
+  setEntriesAll: (next: LearningEntry[]) => void;
+  addEntry: (entry: LearningEntry) => void;
+  saveEntry: (entry: LearningEntry) => void;
+  addEntries: (newEntries: LearningEntry[]) => void;
+  updateEntry: (id: string, updates: Partial<LearningEntry>) => void;
+  removeEntry: (id: string) => void;
+  goals: StudyGoal[];
+  setGoalsAll: (next: StudyGoal[]) => void;
+  addGoal: (goal: StudyGoal) => void;
+  removeGoal: (id: string) => void;
+  settings: AppSettings;
+  updateSettings: (updates: Partial<AppSettings>) => void;
+}
+
+const DataContext = createContext<DataContextValue | undefined>(undefined);
+
+function entryFromRow(row: any): LearningEntry {
+  return {
+    id: row.id,
+    categoryId: row.category_id,
+    date: row.date,
+    unit: row.unit,
+    unitType: row.unit_type,
+    components: (row.components as LearningComponent[]) ?? [],
+    duration: row.duration ?? undefined,
+    createdAt: row.created_at,
+  };
+}
+function entryToRow(entry: LearningEntry, userId: string) {
+  return {
+    id: entry.id,
+    user_id: userId,
+    category_id: entry.categoryId,
+    date: entry.date,
+    unit: entry.unit,
+    unit_type: entry.unitType,
+    components: entry.components as any,
+    duration: entry.duration ?? null,
+  };
+}
+function goalFromRow(row: any): StudyGoal {
+  return {
+    id: row.id,
+    categoryId: row.category_id,
+    title: row.title,
+    target: Number(row.target),
+    targetUnit: row.target_unit ?? '',
+    startDate: row.start_date ?? '',
+    endDate: row.end_date ?? '',
+    current: Number(row.current),
+  };
+}
+function goalToRow(goal: StudyGoal, userId: string) {
+  return {
+    id: goal.id,
+    user_id: userId,
+    category_id: goal.categoryId,
+    title: goal.title,
+    target: goal.target,
+    target_unit: goal.targetUnit || null,
+    start_date: goal.startDate || null,
+    end_date: goal.endDate || null,
+    current: goal.current,
+  };
+}
+
+function isUuid(s: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+}
+function ensureUuid(id: string): string {
+  return isUuid(id) ? id : crypto.randomUUID();
+}
+
+export function DataProvider({ children }: { children: ReactNode }) {
+  const { user, loading: authLoading } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [categories, setCategoriesState] = useState<StudyCategory[]>(DEFAULT_CATEGORIES);
+  const [entries, setEntriesState] = useState<LearningEntry[]>([]);
+  const [goals, setGoalsState] = useState<StudyGoal[]>([]);
+  const [settings, setSettingsState] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const migratedRef = useRef(false);
+
+  const persistCategories = useCallback(async (cats: StudyCategory[]) => {
+    if (!user) return;
+    const { error } = await supabase.from('user_categories').upsert({ user_id: user.id, categories: cats as any });
+    if (error) console.error('persist categories', error);
+  }, [user]);
+
+  const persistSettings = useCallback(async (s: AppSettings) => {
+    if (!user) return;
+    const { error } = await supabase.from('user_settings').upsert({ user_id: user.id, settings: s as any });
+    if (error) console.error('persist settings', error);
+  }, [user]);
+
+  // Load all user data when authenticated.
   useEffect(() => {
-    saveToStorage('torahTracker_categories', categories);
-  }, [categories]);
+    if (authLoading) return;
+    if (!user) {
+      setCategoriesState(DEFAULT_CATEGORIES);
+      setEntriesState([]);
+      setGoalsState([]);
+      setSettingsState(DEFAULT_SETTINGS);
+      setLoading(false);
+      migratedRef.current = false;
+      return;
+    }
 
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Migrate localStorage data on first login (per-session).
+        if (!migratedRef.current) {
+          migratedRef.current = true;
+          await migrateLocalStorageToSupabase(user.id);
+        }
+
+        const [catsRes, entriesRes, goalsRes, settingsRes] = await Promise.all([
+          supabase.from('user_categories').select('categories').eq('user_id', user.id).maybeSingle(),
+          supabase.from('learning_entries').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1000),
+          supabase.from('study_goals').select('*').eq('user_id', user.id),
+          supabase.from('user_settings').select('settings').eq('user_id', user.id).maybeSingle(),
+        ]);
+
+        if (cancelled) return;
+
+        const loadedCats = catsRes.data?.categories
+          ? migrateCategories(catsRes.data.categories as unknown as StudyCategory[])
+          : DEFAULT_CATEGORIES;
+        if (!catsRes.data) {
+          await supabase.from('user_categories').upsert({ user_id: user.id, categories: loadedCats as any });
+        }
+        setCategoriesState(loadedCats);
+
+        setEntriesState((entriesRes.data ?? []).map(entryFromRow));
+        setGoalsState((goalsRes.data ?? []).map(goalFromRow));
+
+        const loadedSettings = settingsRes.data?.settings
+          ? { ...DEFAULT_SETTINGS, ...(settingsRes.data.settings as any), reminders: (settingsRes.data.settings as any).reminders ?? DEFAULT_SETTINGS.reminders }
+          : DEFAULT_SETTINGS;
+        setSettingsState(loadedSettings);
+      } catch (e: any) {
+        console.error('Data load failed', e);
+        if (!cancelled) setError(e?.message || 'Failed to load data');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user, authLoading]);
+
+  // ---------- categories ----------
+  const setCategories = useCallback((cats: StudyCategory[]) => {
+    setCategoriesState(cats);
+    persistCategories(cats);
+  }, [persistCategories]);
   const addCategory = useCallback((cat: StudyCategory) => {
-    setCategories(prev => [...prev, cat]);
-  }, []);
-
+    setCategoriesState(prev => { const next = [...prev, cat]; persistCategories(next); return next; });
+  }, [persistCategories]);
   const updateCategory = useCallback((id: string, updates: Partial<StudyCategory>) => {
-    setCategories(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
-  }, []);
-
+    setCategoriesState(prev => { const next = prev.map(c => c.id === id ? { ...c, ...updates } : c); persistCategories(next); return next; });
+  }, [persistCategories]);
   const removeCategory = useCallback((id: string) => {
-    setCategories(prev => prev.filter(c => c.id !== id));
+    setCategoriesState(prev => { const next = prev.filter(c => c.id !== id); persistCategories(next); return next; });
+  }, [persistCategories]);
+
+  // ---------- entries ----------
+  const setEntriesAll = useCallback((next: LearningEntry[]) => {
+    if (!user) return;
+    const prev = entries;
+    setEntriesState(next);
+    const prevIds = new Set(prev.map(e => e.id));
+    const nextIds = new Set(next.map(e => e.id));
+    const toDelete = prev.filter(e => !nextIds.has(e.id)).map(e => e.id);
+    const toUpsert = next.filter(e => !prevIds.has(e.id));
+    (async () => {
+      if (toDelete.length) await supabase.from('learning_entries').delete().in('id', toDelete);
+      if (toUpsert.length) await supabase.from('learning_entries').upsert(toUpsert.map(e => entryToRow({ ...e, id: ensureUuid(e.id) }, user.id)));
+    })();
+  }, [entries, user]);
+
+  const addEntry = useCallback((entry: LearningEntry) => {
+    if (!user) return;
+    const e = { ...entry, id: ensureUuid(entry.id) };
+    setEntriesState(prev => [e, ...prev]);
+    supabase.from('learning_entries').upsert(entryToRow(e, user.id)).then(({ error }) => {
+      if (error) console.error('addEntry', error);
+    });
+  }, [user]);
+
+  const saveEntry = useCallback((entry: LearningEntry) => {
+    if (!user) return;
+    const e = { ...entry, id: ensureUuid(entry.id) };
+    setEntriesState(prev => upsertEntryForUnit(prev, e));
+    (async () => {
+      // Remove any existing entries for this unit, then insert fresh.
+      const existing = entries.filter(x => x.categoryId === e.categoryId && unitsMatch(x.unit, e.unit, e.categoryId));
+      if (existing.length) {
+        await supabase.from('learning_entries').delete().in('id', existing.map(x => x.id));
+      }
+      await supabase.from('learning_entries').upsert(entryToRow(e, user.id));
+    })();
+  }, [entries, user]);
+
+  const addEntries = useCallback((newEntries: LearningEntry[]) => {
+    if (!user) return;
+    const normalized = newEntries.map(e => ({ ...e, id: ensureUuid(e.id) }));
+    setEntriesState(prev => [...normalized, ...prev]);
+    supabase.from('learning_entries').upsert(normalized.map(e => entryToRow(e, user.id))).then(({ error }) => {
+      if (error) console.error('addEntries', error);
+    });
+  }, [user]);
+
+  const updateEntry = useCallback((id: string, updates: Partial<LearningEntry>) => {
+    if (!user) return;
+    setEntriesState(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
+    const merged = entries.find(e => e.id === id);
+    if (merged) {
+      const updated = { ...merged, ...updates };
+      supabase.from('learning_entries').update(entryToRow(updated, user.id)).eq('id', id);
+    }
+  }, [entries, user]);
+
+  const removeEntry = useCallback((id: string) => {
+    setEntriesState(prev => prev.filter(e => e.id !== id));
+    supabase.from('learning_entries').delete().eq('id', id);
   }, []);
 
-  return { categories, addCategory, updateCategory, removeCategory, setCategories };
+  // ---------- goals ----------
+  const setGoalsAll = useCallback((next: StudyGoal[]) => {
+    if (!user) return;
+    const prev = goals;
+    setGoalsState(next);
+    const nextIds = new Set(next.map(g => g.id));
+    const toDelete = prev.filter(g => !nextIds.has(g.id)).map(g => g.id);
+    (async () => {
+      if (toDelete.length) await supabase.from('study_goals').delete().in('id', toDelete);
+      if (next.length) await supabase.from('study_goals').upsert(next.map(g => goalToRow({ ...g, id: ensureUuid(g.id) }, user.id)));
+    })();
+  }, [goals, user]);
+  const addGoal = useCallback((goal: StudyGoal) => {
+    if (!user) return;
+    const g = { ...goal, id: ensureUuid(goal.id) };
+    setGoalsState(prev => [...prev, g]);
+    supabase.from('study_goals').upsert(goalToRow(g, user.id));
+  }, [user]);
+  const removeGoal = useCallback((id: string) => {
+    setGoalsState(prev => prev.filter(g => g.id !== id));
+    supabase.from('study_goals').delete().eq('id', id);
+  }, []);
+
+  // ---------- settings ----------
+  const updateSettings = useCallback((updates: Partial<AppSettings>) => {
+    setSettingsState(prev => {
+      const next = { ...prev, ...updates };
+      persistSettings(next);
+      return next;
+    });
+  }, [persistSettings]);
+
+  return createElement(DataContext.Provider, {
+    value: {
+      loading, error,
+      categories, setCategories, addCategory, updateCategory, removeCategory,
+      entries, setEntriesAll, addEntry, saveEntry, addEntries, updateEntry, removeEntry,
+      goals, setGoalsAll, addGoal, removeGoal,
+      settings, updateSettings,
+    },
+  }, children);
+}
+
+function useData(): DataContextValue {
+  const ctx = useContext(DataContext);
+  if (!ctx) throw new Error('useData must be used within DataProvider');
+  return ctx;
+}
+
+// ---- Backwards-compatible hook signatures (used across the app) ----
+
+export function useCategories() {
+  const d = useData();
+  return {
+    categories: d.categories,
+    addCategory: d.addCategory,
+    updateCategory: d.updateCategory,
+    removeCategory: d.removeCategory,
+    setCategories: d.setCategories,
+  };
 }
 
 export function useEntries() {
-  const [entries, setEntries] = useState<LearningEntry[]>(() =>
-    loadFromStorage('torahTracker_entries', [])
-  );
-
-  useEffect(() => {
-    saveToStorage('torahTracker_entries', entries);
-  }, [entries]);
-
-  const addEntry = useCallback((entry: LearningEntry) => {
-    const next = [entry, ...entries];
-    saveToStorage('torahTracker_entries', next);
-    setEntries(next);
-  }, [entries]);
-
-  const saveEntry = useCallback((entry: LearningEntry) => {
-    const next = upsertEntryForUnit(entries, entry);
-    saveToStorage('torahTracker_entries', next);
-    setEntries(next);
-  }, [entries]);
-
-  const addEntries = useCallback((newEntries: LearningEntry[]) => {
-    const next = [...newEntries, ...entries];
-    saveToStorage('torahTracker_entries', next);
-    setEntries(next);
-  }, [entries]);
-
-  const updateEntry = useCallback((id: string, updates: Partial<LearningEntry>) => {
-    const next = entries.map(e => e.id === id ? { ...e, ...updates } : e);
-    saveToStorage('torahTracker_entries', next);
-    setEntries(next);
-  }, [entries]);
-
-  const removeEntry = useCallback((id: string) => {
-    const next = entries.filter(e => e.id !== id);
-    saveToStorage('torahTracker_entries', next);
-    setEntries(next);
-  }, [entries]);
-
-  const replaceEntries = useCallback((next: LearningEntry[]) => {
-    saveToStorage('torahTracker_entries', next);
-    setEntries(next);
-  }, []);
-
-  return { entries, addEntry, saveEntry, addEntries, updateEntry, removeEntry, setEntries: replaceEntries };
+  const d = useData();
+  return {
+    entries: d.entries,
+    addEntry: d.addEntry,
+    saveEntry: d.saveEntry,
+    addEntries: d.addEntries,
+    updateEntry: d.updateEntry,
+    removeEntry: d.removeEntry,
+    setEntries: d.setEntriesAll,
+  };
 }
 
 export function useGoals() {
-  const [goals, setGoals] = useState<StudyGoal[]>(() =>
-    loadFromStorage('torahTracker_goals', [])
-  );
-
-  useEffect(() => {
-    saveToStorage('torahTracker_goals', goals);
-  }, [goals]);
-
-  const addGoal = useCallback((goal: StudyGoal) => {
-    setGoals(prev => [...prev, goal]);
-  }, []);
-
-  const removeGoal = useCallback((id: string) => {
-    setGoals(prev => prev.filter(g => g.id !== id));
-  }, []);
-
-  return { goals, addGoal, removeGoal, setGoals };
+  const d = useData();
+  return {
+    goals: d.goals,
+    addGoal: d.addGoal,
+    removeGoal: d.removeGoal,
+    setGoals: d.setGoalsAll,
+  };
 }
 
 export function useSettings() {
-  const [settings, setSettings] = useState<AppSettings>(() => {
-    const loaded = loadFromStorage('torahTracker_settings', DEFAULT_SETTINGS);
-    return { ...DEFAULT_SETTINGS, ...loaded, reminders: loaded.reminders ?? DEFAULT_SETTINGS.reminders };
-  });
-
-  useEffect(() => {
-    saveToStorage('torahTracker_settings', settings);
-  }, [settings]);
-
-  const updateSettings = useCallback((updates: Partial<AppSettings>) => {
-    setSettings(prev => ({ ...prev, ...updates }));
-  }, []);
-
-  return { settings, updateSettings };
+  const d = useData();
+  return { settings: d.settings, updateSettings: d.updateSettings };
 }
+
+export function useDataStatus() {
+  const d = useData();
+  return { loading: d.loading, error: d.error };
+}
+
+// ---- Migration from legacy localStorage ----
+
+async function migrateLocalStorageToSupabase(userId: string) {
+  try {
+    const legacyEntries = localStorage.getItem('torahTracker_entries');
+    const legacyCategories = localStorage.getItem('torahTracker_categories');
+    const legacyGoals = localStorage.getItem('torahTracker_goals');
+    const legacySettings = localStorage.getItem('torahTracker_settings');
+
+    if (legacyEntries) {
+      const parsed: LearningEntry[] = JSON.parse(legacyEntries);
+      if (Array.isArray(parsed) && parsed.length) {
+        const rows = parsed.map(e => entryToRow({ ...e, id: ensureUuid(e.id) }, userId));
+        await supabase.from('learning_entries').upsert(rows);
+      }
+      localStorage.removeItem('torahTracker_entries');
+    }
+    if (legacyCategories) {
+      const parsed = JSON.parse(legacyCategories);
+      await supabase.from('user_categories').upsert({ user_id: userId, categories: parsed });
+      localStorage.removeItem('torahTracker_categories');
+    }
+    if (legacyGoals) {
+      const parsed: StudyGoal[] = JSON.parse(legacyGoals);
+      if (Array.isArray(parsed) && parsed.length) {
+        await supabase.from('study_goals').upsert(parsed.map(g => goalToRow({ ...g, id: ensureUuid(g.id) }, userId)));
+      }
+      localStorage.removeItem('torahTracker_goals');
+    }
+    if (legacySettings) {
+      const parsed = JSON.parse(legacySettings);
+      await supabase.from('user_settings').upsert({ user_id: userId, settings: parsed });
+      localStorage.removeItem('torahTracker_settings');
+    }
+  } catch (e) {
+    console.warn('localStorage migration skipped', e);
+  }
+}
+
 
 // Helper: compute streak
 export function computeStreak(entries: LearningEntry[]): number {
