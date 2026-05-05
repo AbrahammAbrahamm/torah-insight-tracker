@@ -162,10 +162,8 @@ export default function SettingsPage() {
     toast.success('Progress copied to clipboard!');
   };
 
-  const handleLogin = () => {
-    toast.info('Login coming soon');
-  };
-
+  const navigate = useNavigate();
+  const handleLogin = () => navigate('/auth');
   const themes = [
     { value: 'light' as const, icon: Sun, label: t('settings.themeLight') },
     { value: 'dark' as const, icon: Moon, label: t('settings.themeDark') },
