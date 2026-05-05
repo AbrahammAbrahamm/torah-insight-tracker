@@ -176,6 +176,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     { id: 'review-daf-yomi', type: 'review-daf-yomi', label: 'Review Daf Yomi', enabled: false, time: '21:00', frequency: 'daily' },
     { id: 'shnayim-mikra', type: 'shnayim-mikra', label: 'Shnayim Mikra', enabled: false, time: '15:00', frequency: 'weekly' },
   ],
+  chumashStructure: 'perek',
 };
 
 function loadFromStorage<T>(key: string, fallback: T): T {
