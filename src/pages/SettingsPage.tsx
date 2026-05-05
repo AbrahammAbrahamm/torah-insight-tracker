@@ -384,22 +384,7 @@ export default function SettingsPage() {
         </div>
       </CollapsibleSection>
 
-      <section className="mb-6 mt-4 space-y-3">
-        <div className="bg-card border rounded-xl p-4">
-          <div className="flex items-center justify-between">
-            <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">Signed in as</p>
-              <p className="text-sm font-medium truncate">{profile?.display_name || user?.email}</p>
-              {profile?.display_name && <p className="text-xs text-muted-foreground truncate">{user?.email}</p>}
-            </div>
-            <button
-              onClick={async () => { await signOut(); }}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg bg-secondary hover:bg-secondary/80"
-            >
-              <LogOut className="w-4 h-4" /> Sign out
-            </button>
-          </div>
-        </div>
+      <section className="mb-6 mt-4">
         <div className="bg-secondary/50 rounded-xl p-4 text-center">
           <p className="text-xs text-muted-foreground">
             {entries.length} {t('settings.entries')} · {categories.length} {t('settings.categoriesCount')} · {goals.length} {t('settings.goalsCount')}
