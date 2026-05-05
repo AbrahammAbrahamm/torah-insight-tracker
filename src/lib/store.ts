@@ -28,6 +28,13 @@ function withDefaultSubcategories(cat: StudyCategory): StudyCategory {
   return subs ? { ...cat, subcategories: subs } : cat;
 }
 
+export function applyChumashStructure(cats: StudyCategory[], style: 'perek' | 'parsha'): StudyCategory[] {
+  return cats.map(c => {
+    if (c.id !== 'chumash') return c;
+    return { ...c, subcategories: style === 'parsha' ? CHUMASH_BY_PARSHA_STRUCTURE : CHUMASH_STRUCTURE };
+  });
+}
+
 export interface LearningComponent {
   id: string;
   name: string;
