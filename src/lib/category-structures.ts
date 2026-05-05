@@ -420,9 +420,10 @@ export const CHUMASH_BY_PARSHA_STRUCTURE: SubCategory[] = (Object.entries(PARSHA
       children: p.aliyot.map((a, aIdx) => {
         const [sc, sp, ec, ep] = a;
         const pesukim: SubCategory[] = [];
+        const bookCounts = PASUK_COUNTS[book as keyof typeof PASUK_COUNTS];
         for (let c = sc; c <= ec; c++) {
           const startP = c === sc ? sp : 1;
-          const endP = c === ec ? ep : 200; // upper bound; trimmed by reality below
+          const endP = c === ec ? ep : (bookCounts[c - 1] ?? ep);
           for (let pp = startP; pp <= endP; pp++) {
             pesukim.push({ id: `${SEFER_ID_BY_BOOK[book]}-p${pIdx+1}-a${aIdx+1}-${c}-${pp}`, name: `Perek ${c}:${pp}`, totalUnits: 1 });
           }
