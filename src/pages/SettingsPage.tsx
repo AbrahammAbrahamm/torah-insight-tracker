@@ -180,18 +180,36 @@ export default function SettingsPage() {
     <div className="pb-24 px-4 pt-6 max-w-lg mx-auto">
       <PageHeader title={t('settings.title')} subtitle={t('settings.subtitle')} />
 
-      <CollapsibleSection title={t('settings.account')} storageKey="account" icon={<LogIn className="w-4 h-4 text-primary" />}>
-        <button
-          onClick={handleLogin}
-          className="w-full flex items-center gap-3 bg-card border rounded-xl p-4 text-left hover:bg-secondary/50 transition-colors"
-        >
-          <LogIn className="w-5 h-5 text-primary" />
-          <div className="flex-1">
-            <p className="text-sm font-medium">{t('settings.login')}</p>
-            <p className="text-xs text-muted-foreground">{t('settings.loginDesc')}</p>
+      {user ? (
+        <section className="mb-3">
+          <div className="bg-card border rounded-xl p-4 flex items-center justify-between">
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Signed in as</p>
+              <p className="text-sm font-medium truncate">{profile?.display_name || user?.email}</p>
+              {profile?.display_name && <p className="text-xs text-muted-foreground truncate">{user?.email}</p>}
+            </div>
+            <button
+              onClick={async () => { await signOut(); }}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg bg-secondary hover:bg-secondary/80"
+            >
+              <LogOut className="w-4 h-4" /> Sign out
+            </button>
           </div>
-        </button>
-      </CollapsibleSection>
+        </section>
+      ) : (
+        <section className="mb-3">
+          <button
+            onClick={handleLogin}
+            className="w-full flex items-center gap-3 bg-card border rounded-xl p-4 text-left hover:bg-secondary/50 transition-colors"
+          >
+            <LogIn className="w-5 h-5 text-primary" />
+            <div className="flex-1">
+              <p className="text-sm font-medium">Sign in / Create account</p>
+              <p className="text-xs text-muted-foreground">Save your progress to the cloud</p>
+            </div>
+          </button>
+        </section>
+      )}
 
       <CollapsibleSection title={t('settings.language')} storageKey="language" icon={<Languages className="w-4 h-4 text-primary" />}>
         <div className="bg-card border rounded-xl divide-y">
