@@ -1,9 +1,11 @@
 import { useState, ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useSettings, useEntries, useCategories, useGoals } from '@/lib/store';
-import { Download, Share2, Sun, Moon, Monitor, Palette, Bell, Layout, LogIn, Languages, ChevronDown } from 'lucide-react';
+import { Download, Share2, Sun, Moon, Monitor, Palette, Bell, Layout, LogIn, Languages, ChevronDown, BookOpen, ListOrdered } from 'lucide-react';
 import { toast } from 'sonner';
 import { CategoryManager } from '@/components/CategoryManager';
+import { CategoryOrderManager } from '@/components/CategoryOrderManager';
 import { useI18n, LANGUAGES, Language } from '@/lib/i18n';
 import { useAuth } from '@/contexts/AuthContext';
 import { LogOut } from 'lucide-react';
@@ -49,7 +51,7 @@ function CollapsibleSection({
         <h2 className="text-sm font-semibold flex-1">{title}</h2>
         <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
-      {open && <div className="mt-2">{children}</div>}
+      {open && <div className="mt-2 ml-4 pl-2 border-l-2 border-border/60">{children}</div>}
     </section>
   );
 }
@@ -160,10 +162,8 @@ export default function SettingsPage() {
     toast.success('Progress copied to clipboard!');
   };
 
-  const handleLogin = () => {
-    toast.info('Login coming soon');
-  };
-
+  const navigate = useNavigate();
+  const handleLogin = () => navigate('/auth');
   const themes = [
     { value: 'light' as const, icon: Sun, label: t('settings.themeLight') },
     { value: 'dark' as const, icon: Moon, label: t('settings.themeDark') },
@@ -180,18 +180,36 @@ export default function SettingsPage() {
     <div className="pb-24 px-4 pt-6 max-w-lg mx-auto">
       <PageHeader title={t('settings.title')} subtitle={t('settings.subtitle')} />
 
-      <CollapsibleSection title={t('settings.account')} storageKey="account" icon={<LogIn className="w-4 h-4 text-primary" />}>
-        <button
-          onClick={handleLogin}
-          className="w-full flex items-center gap-3 bg-card border rounded-xl p-4 text-left hover:bg-secondary/50 transition-colors"
-        >
-          <LogIn className="w-5 h-5 text-primary" />
-          <div className="flex-1">
-            <p className="text-sm font-medium">{t('settings.login')}</p>
-            <p className="text-xs text-muted-foreground">{t('settings.loginDesc')}</p>
+      {user ? (
+        <section className="mb-3">
+          <div className="bg-card border rounded-xl p-4 flex items-center justify-between">
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Signed in as</p>
+              <p className="text-sm font-medium truncate">{profile?.display_name || user?.email}</p>
+              {profile?.display_name && <p className="text-xs text-muted-foreground truncate">{user?.email}</p>}
+            </div>
+            <button
+              onClick={async () => { await signOut(); }}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg bg-secondary hover:bg-secondary/80"
+            >
+              <LogOut className="w-4 h-4" /> Sign out
+            </button>
           </div>
-        </button>
-      </CollapsibleSection>
+        </section>
+      ) : (
+        <section className="mb-3">
+          <button
+            onClick={handleLogin}
+            className="w-full flex items-center gap-3 bg-card border rounded-xl p-4 text-left hover:bg-secondary/50 transition-colors"
+          >
+            <LogIn className="w-5 h-5 text-primary" />
+            <div className="flex-1">
+              <p className="text-sm font-medium">Sign in / Create account</p>
+              <p className="text-xs text-muted-foreground">Save your progress to the cloud</p>
+            </div>
+          </button>
+        </section>
+      )}
 
       <CollapsibleSection title={t('settings.language')} storageKey="language" icon={<Languages className="w-4 h-4 text-primary" />}>
         <div className="bg-card border rounded-xl divide-y">
@@ -295,7 +313,26 @@ export default function SettingsPage() {
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title={t('settings.categories') || 'Categories'} storageKey="categories">
+      <CollapsibleSection title="Main Categories" storageKey="main-cats" icon={<ListOrdered className="w-4 h-4 text-primary" />}>
+        <CategoryOrderManager />
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Chumash structure" storageKey="chumash-structure" icon={<BookOpen className="w-4 h-4 text-primary" />}>
+        <div className="flex gap-2">
+          {(['perek','parsha'] as const).map(v => (
+            <button key={v}
+              onClick={() => updateSettings({ chumashStructure: v })}
+              className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+                (settings.chumashStructure ?? 'perek') === v ? 'bg-primary/10 border-primary text-foreground' : 'bg-card border-border text-muted-foreground'
+              }`}
+            >
+              {v === 'perek' ? 'By Perek' : 'By Parsha → Aliya'}
+            </button>
+          ))}
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection title={t('settings.categories') || 'Custom Categories'} storageKey="categories">
         <CategoryManager />
       </CollapsibleSection>
 
@@ -347,22 +384,7 @@ export default function SettingsPage() {
         </div>
       </CollapsibleSection>
 
-      <section className="mb-6 mt-4 space-y-3">
-        <div className="bg-card border rounded-xl p-4">
-          <div className="flex items-center justify-between">
-            <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">Signed in as</p>
-              <p className="text-sm font-medium truncate">{profile?.display_name || user?.email}</p>
-              {profile?.display_name && <p className="text-xs text-muted-foreground truncate">{user?.email}</p>}
-            </div>
-            <button
-              onClick={async () => { await signOut(); }}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg bg-secondary hover:bg-secondary/80"
-            >
-              <LogOut className="w-4 h-4" /> Sign out
-            </button>
-          </div>
-        </div>
+      <section className="mb-6 mt-4">
         <div className="bg-secondary/50 rounded-xl p-4 text-center">
           <p className="text-xs text-muted-foreground">
             {entries.length} {t('settings.entries')} · {categories.length} {t('settings.categoriesCount')} · {goals.length} {t('settings.goalsCount')}

@@ -375,6 +375,74 @@ function generateMishnahBerurahSimanim(): SubCategory[] {
   });
 }
 
-export const MISHNAH_BERURAH_STRUCTURE: SubCategory[] = [
-  { id: 'mb-orach-chaim', name: 'Orach Chaim', children: generateMishnahBerurahSimanim() },
+// Standard 6-volume Mishnah Berurah split by Siman ranges.
+const MB_VOLUMES: { name: string; start: number; end: number }[] = [
+  { name: 'Volume 1', start: 1, end: 127 },
+  { name: 'Volume 2', start: 128, end: 241 },
+  { name: 'Volume 3', start: 242, end: 365 },
+  { name: 'Volume 4', start: 366, end: 428 },
+  { name: 'Volume 5', start: 429, end: 531 },
+  { name: 'Volume 6', start: 532, end: 697 },
 ];
+
+export const MISHNAH_BERURAH_STRUCTURE: SubCategory[] = (() => {
+  const allSimanim = generateMishnahBerurahSimanim();
+  return MB_VOLUMES.map((v, i) => ({
+    id: `mb-volume-${i + 1}`,
+    name: v.name,
+    children: allSimanim.slice(v.start - 1, v.end),
+  }));
+})();
+
+// Chumash split by Parsha → Aliya → Pasuk
+import PARSHA_DATA from './parsha-data.json';
+
+const PASUK_COUNTS = {
+  Genesis: [31,25,24,26,32,22,24,22,29,32,32,20,18,24,21,16,27,33,38,18,34,24,20,67,34,35,46,22,35,43,55,32,20,31,29,43,36,30,23,23,57,32,31,29,44,26,22,49,50,26],
+  Exodus: [22,25,22,31,23,30,25,32,35,29,10,51,22,31,27,36,16,27,25,26,36,31,33,18,40,37,21,43,46,38,18,35,23,35,35,38,29,31,43,38],
+  Leviticus: [17,16,17,35,26,23,38,36,24,20,47,8,59,57,33,34,16,30,37,27,24,33,44,23,55,46,34],
+  Numbers: [54,34,51,49,49,31,47,89,26,23,36,35,16,33,45,41,50,13,32,22,29,35,41,30,25,18,65,23,31,40,16,54,42,56,29,34],
+  Deuteronomy: [46,37,29,49,33,25,26,20,29,22,32,32,18,29,23,22,20,22,21,20,23,30,25,22,19,19,26,68,29,20,30,52,29,12],
+};
+
+interface ParshaInfo { name: string; he: string; aliyot: number[][] }
+interface BookParshiot { he: string; parshiot: ParshaInfo[] }
+
+const SEFER_ID_BY_BOOK: Record<string, string> = {
+  Genesis: 'bereishis', Exodus: 'shemos', Leviticus: 'vayikra',
+  Numbers: 'bamidbar', Deuteronomy: 'devarim',
+};
+const SEFER_NAME_BY_BOOK: Record<string, string> = {
+  Genesis: 'Bereishis', Exodus: 'Shemos', Leviticus: 'Vayikra',
+  Numbers: 'Bamidbar', Deuteronomy: 'Devarim',
+};
+
+export const CHUMASH_BY_PARSHA_STRUCTURE: SubCategory[] = (Object.entries(PARSHA_DATA) as [string, BookParshiot][]).map(([book, info]) => ({
+  id: SEFER_ID_BY_BOOK[book],
+  name: SEFER_NAME_BY_BOOK[book],
+  children: info.parshiot.map((p, pIdx) => {
+    const aliyaNames = ['Rishon','Sheni','Shlishi','Revi\'i','Chamishi','Shishi','Shvi\'i'];
+    return {
+      id: `parsha-${SEFER_ID_BY_BOOK[book]}-${pIdx + 1}`,
+      name: p.name,
+      children: p.aliyot.map((a, aIdx) => {
+        const [sc, sp, ec, ep] = a;
+        const pesukim: SubCategory[] = [];
+        const bookCounts = PASUK_COUNTS[book as keyof typeof PASUK_COUNTS];
+        for (let c = sc; c <= ec; c++) {
+          const startP = c === sc ? sp : 1;
+          const endP = c === ec ? ep : (bookCounts[c - 1] ?? ep);
+          for (let pp = startP; pp <= endP; pp++) {
+            pesukim.push({ id: `${SEFER_ID_BY_BOOK[book]}-p${pIdx+1}-a${aIdx+1}-${c}-${pp}`, name: `Perek ${c}:${pp}`, totalUnits: 1 });
+          }
+        }
+        return {
+          id: `aliya-${SEFER_ID_BY_BOOK[book]}-${pIdx+1}-${aIdx+1}`,
+          name: aliyaNames[aIdx] || `Aliya ${aIdx+1}`,
+          totalUnits: pesukim.length,
+          children: pesukim,
+        };
+      }),
+    };
+  }),
+}));

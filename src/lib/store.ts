@@ -1,6 +1,6 @@
 // Supabase-backed store for Torah learning data (with localStorage migration)
 import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode, createElement } from 'react';
-import { SubCategory, GEMARA_STRUCTURE, TANACH_STRUCTURE, MISHNAYOS_STRUCTURE, HALACHA_STRUCTURE, CHUMASH_STRUCTURE, TANACH_NACH_STRUCTURE, MISHNAH_BERURAH_STRUCTURE } from './category-structures';
+import { SubCategory, GEMARA_STRUCTURE, TANACH_STRUCTURE, MISHNAYOS_STRUCTURE, HALACHA_STRUCTURE, CHUMASH_STRUCTURE, CHUMASH_BY_PARSHA_STRUCTURE, TANACH_NACH_STRUCTURE, MISHNAH_BERURAH_STRUCTURE } from './category-structures';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -26,6 +26,13 @@ function withDefaultSubcategories(cat: StudyCategory): StudyCategory {
   if (cat.structure === 'gemara') subs = GEMARA_STRUCTURE;
   else if (cat.structure === 'tanach') subs = TANACH_STRUCTURE;
   return subs ? { ...cat, subcategories: subs } : cat;
+}
+
+export function applyChumashStructure(cats: StudyCategory[], style: 'perek' | 'parsha'): StudyCategory[] {
+  return cats.map(c => {
+    if (c.id !== 'chumash') return c;
+    return { ...c, subcategories: style === 'parsha' ? CHUMASH_BY_PARSHA_STRUCTURE : CHUMASH_STRUCTURE };
+  });
 }
 
 export interface LearningComponent {
@@ -60,6 +67,8 @@ export interface StudyCategory {
   trackByLines: boolean;
   structure?: 'gemara' | 'tanach' | 'custom';
   subcategories?: SubCategory[];
+  hidden?: boolean;
+  order?: number;
 }
 
 export interface StudyGoal {
@@ -87,11 +96,11 @@ export interface ReminderConfig {
 export interface AppSettings {
   theme: 'light' | 'dark' | 'system';
   layoutDensity: 'compact' | 'comfortable' | 'spacious';
-  // Legacy global toggle (kept for back-compat with existing UI bits).
   reminderEnabled: boolean;
   reminderTime: string;
   reminderDays: number[];
   reminders: ReminderConfig[];
+  chumashStructure?: 'perek' | 'parsha';
 }
 
 const DEFAULT_CATEGORIES: StudyCategory[] = [
@@ -174,6 +183,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     { id: 'review-daf-yomi', type: 'review-daf-yomi', label: 'Review Daf Yomi', enabled: false, time: '21:00', frequency: 'daily' },
     { id: 'shnayim-mikra', type: 'shnayim-mikra', label: 'Shnayim Mikra', enabled: false, time: '15:00', frequency: 'weekly' },
   ],
+  chumashStructure: 'perek',
 };
 
 function loadFromStorage<T>(key: string, fallback: T): T {
@@ -385,7 +395,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
-      setCategoriesState(DEFAULT_CATEGORIES);
+      setCategoriesState(migrateCategories(DEFAULT_CATEGORIES));
       setEntriesState([]);
       setGoalsState([]);
       setSettingsState(DEFAULT_SETTINGS);
@@ -456,9 +466,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   // ---------- entries ----------
   const setEntriesAll = useCallback((next: LearningEntry[]) => {
-    if (!user) return;
     const prev = entries;
     setEntriesState(next);
+    if (!user) return;
     const prevIds = new Set(prev.map(e => e.id));
     const nextIds = new Set(next.map(e => e.id));
     const toDelete = prev.filter(e => !nextIds.has(e.id)).map(e => e.id);
@@ -470,20 +480,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [entries, user]);
 
   const addEntry = useCallback((entry: LearningEntry) => {
-    if (!user) return;
     const e = { ...entry, id: ensureUuid(entry.id) };
     setEntriesState(prev => [e, ...prev]);
+    if (!user) return;
     supabase.from('learning_entries').upsert(entryToRow(e, user.id)).then(({ error }) => {
       if (error) console.error('addEntry', error);
     });
   }, [user]);
 
   const saveEntry = useCallback((entry: LearningEntry) => {
-    if (!user) return;
     const e = { ...entry, id: ensureUuid(entry.id) };
     setEntriesState(prev => upsertEntryForUnit(prev, e));
+    if (!user) return;
     (async () => {
-      // Remove any existing entries for this unit, then insert fresh.
       const existing = entries.filter(x => x.categoryId === e.categoryId && unitsMatch(x.unit, e.unit, e.categoryId));
       if (existing.length) {
         await supabase.from('learning_entries').delete().in('id', existing.map(x => x.id));
@@ -493,17 +502,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [entries, user]);
 
   const addEntries = useCallback((newEntries: LearningEntry[]) => {
-    if (!user) return;
     const normalized = newEntries.map(e => ({ ...e, id: ensureUuid(e.id) }));
     setEntriesState(prev => [...normalized, ...prev]);
+    if (!user) return;
     supabase.from('learning_entries').upsert(normalized.map(e => entryToRow(e, user.id))).then(({ error }) => {
       if (error) console.error('addEntries', error);
     });
   }, [user]);
 
   const updateEntry = useCallback((id: string, updates: Partial<LearningEntry>) => {
-    if (!user) return;
     setEntriesState(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
+    if (!user) return;
     const merged = entries.find(e => e.id === id);
     if (merged) {
       const updated = { ...merged, ...updates };
@@ -513,14 +522,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const removeEntry = useCallback((id: string) => {
     setEntriesState(prev => prev.filter(e => e.id !== id));
+    if (!user) return;
     supabase.from('learning_entries').delete().eq('id', id);
-  }, []);
+  }, [user]);
 
   // ---------- goals ----------
   const setGoalsAll = useCallback((next: StudyGoal[]) => {
-    if (!user) return;
     const prev = goals;
     setGoalsState(next);
+    if (!user) return;
     const nextIds = new Set(next.map(g => g.id));
     const toDelete = prev.filter(g => !nextIds.has(g.id)).map(g => g.id);
     (async () => {
@@ -529,15 +539,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     })();
   }, [goals, user]);
   const addGoal = useCallback((goal: StudyGoal) => {
-    if (!user) return;
     const g = { ...goal, id: ensureUuid(goal.id) };
     setGoalsState(prev => [...prev, g]);
+    if (!user) return;
     supabase.from('study_goals').upsert(goalToRow(g, user.id));
   }, [user]);
   const removeGoal = useCallback((id: string) => {
     setGoalsState(prev => prev.filter(g => g.id !== id));
+    if (!user) return;
     supabase.from('study_goals').delete().eq('id', id);
-  }, []);
+  }, [user]);
 
   // ---------- settings ----------
   const updateSettings = useCallback((updates: Partial<AppSettings>) => {
@@ -567,10 +578,15 @@ function useData(): DataContextValue {
 
 // ---- Backwards-compatible hook signatures (used across the app) ----
 
-export function useCategories() {
+export function useCategories(opts?: { includeHidden?: boolean }) {
   const d = useData();
+  const include = opts?.includeHidden ?? false;
+  const style = d.settings.chumashStructure ?? 'perek';
+  let cats = applyChumashStructure(d.categories, style);
+  cats = [...cats].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  if (!include) cats = cats.filter(c => !c.hidden);
   return {
-    categories: d.categories,
+    categories: cats,
     addCategory: d.addCategory,
     updateCategory: d.updateCategory,
     removeCategory: d.removeCategory,

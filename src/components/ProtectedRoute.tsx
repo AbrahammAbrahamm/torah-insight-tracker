@@ -1,20 +1,8 @@
 import { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
 import { useDataStatus } from '@/lib/store';
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
   const { loading: dataLoading, error } = useDataStatus();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">
-        Loading…
-      </div>
-    );
-  }
-  if (!user) return <Navigate to="/auth" replace />;
 
   if (error) {
     return (
@@ -34,7 +22,7 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   if (dataLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">
-        Loading your data…
+        Loading…
       </div>
     );
   }
