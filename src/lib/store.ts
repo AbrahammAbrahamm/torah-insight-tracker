@@ -466,9 +466,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   // ---------- entries ----------
   const setEntriesAll = useCallback((next: LearningEntry[]) => {
-    if (!user) return;
     const prev = entries;
     setEntriesState(next);
+    if (!user) return;
     const prevIds = new Set(prev.map(e => e.id));
     const nextIds = new Set(next.map(e => e.id));
     const toDelete = prev.filter(e => !nextIds.has(e.id)).map(e => e.id);
@@ -480,20 +480,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [entries, user]);
 
   const addEntry = useCallback((entry: LearningEntry) => {
-    if (!user) return;
     const e = { ...entry, id: ensureUuid(entry.id) };
     setEntriesState(prev => [e, ...prev]);
+    if (!user) return;
     supabase.from('learning_entries').upsert(entryToRow(e, user.id)).then(({ error }) => {
       if (error) console.error('addEntry', error);
     });
   }, [user]);
 
   const saveEntry = useCallback((entry: LearningEntry) => {
-    if (!user) return;
     const e = { ...entry, id: ensureUuid(entry.id) };
     setEntriesState(prev => upsertEntryForUnit(prev, e));
+    if (!user) return;
     (async () => {
-      // Remove any existing entries for this unit, then insert fresh.
       const existing = entries.filter(x => x.categoryId === e.categoryId && unitsMatch(x.unit, e.unit, e.categoryId));
       if (existing.length) {
         await supabase.from('learning_entries').delete().in('id', existing.map(x => x.id));
@@ -503,17 +502,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [entries, user]);
 
   const addEntries = useCallback((newEntries: LearningEntry[]) => {
-    if (!user) return;
     const normalized = newEntries.map(e => ({ ...e, id: ensureUuid(e.id) }));
     setEntriesState(prev => [...normalized, ...prev]);
+    if (!user) return;
     supabase.from('learning_entries').upsert(normalized.map(e => entryToRow(e, user.id))).then(({ error }) => {
       if (error) console.error('addEntries', error);
     });
   }, [user]);
 
   const updateEntry = useCallback((id: string, updates: Partial<LearningEntry>) => {
-    if (!user) return;
     setEntriesState(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
+    if (!user) return;
     const merged = entries.find(e => e.id === id);
     if (merged) {
       const updated = { ...merged, ...updates };
@@ -523,14 +522,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const removeEntry = useCallback((id: string) => {
     setEntriesState(prev => prev.filter(e => e.id !== id));
+    if (!user) return;
     supabase.from('learning_entries').delete().eq('id', id);
-  }, []);
+  }, [user]);
 
   // ---------- goals ----------
   const setGoalsAll = useCallback((next: StudyGoal[]) => {
-    if (!user) return;
     const prev = goals;
     setGoalsState(next);
+    if (!user) return;
     const nextIds = new Set(next.map(g => g.id));
     const toDelete = prev.filter(g => !nextIds.has(g.id)).map(g => g.id);
     (async () => {
@@ -539,15 +539,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     })();
   }, [goals, user]);
   const addGoal = useCallback((goal: StudyGoal) => {
-    if (!user) return;
     const g = { ...goal, id: ensureUuid(goal.id) };
     setGoalsState(prev => [...prev, g]);
+    if (!user) return;
     supabase.from('study_goals').upsert(goalToRow(g, user.id));
   }, [user]);
   const removeGoal = useCallback((id: string) => {
     setGoalsState(prev => prev.filter(g => g.id !== id));
+    if (!user) return;
     supabase.from('study_goals').delete().eq('id', id);
-  }, []);
+  }, [user]);
 
   // ---------- settings ----------
   const updateSettings = useCallback((updates: Partial<AppSettings>) => {
