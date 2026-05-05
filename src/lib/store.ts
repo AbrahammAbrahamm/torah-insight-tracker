@@ -89,11 +89,11 @@ export interface ReminderConfig {
 export interface AppSettings {
   theme: 'light' | 'dark' | 'system';
   layoutDensity: 'compact' | 'comfortable' | 'spacious';
-  // Legacy global toggle (kept for back-compat with existing UI bits).
   reminderEnabled: boolean;
   reminderTime: string;
   reminderDays: number[];
   reminders: ReminderConfig[];
+  chumashStructure?: 'perek' | 'parsha';
 }
 
 const DEFAULT_CATEGORIES: StudyCategory[] = [
