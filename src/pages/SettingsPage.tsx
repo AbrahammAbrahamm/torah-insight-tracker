@@ -313,7 +313,26 @@ export default function SettingsPage() {
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title={t('settings.categories') || 'Categories'} storageKey="categories">
+      <CollapsibleSection title="Main Categories" storageKey="main-cats" icon={<ListOrdered className="w-4 h-4 text-primary" />}>
+        <CategoryOrderManager />
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Chumash structure" storageKey="chumash-structure" icon={<BookOpen className="w-4 h-4 text-primary" />}>
+        <div className="flex gap-2">
+          {(['perek','parsha'] as const).map(v => (
+            <button key={v}
+              onClick={() => updateSettings({ chumashStructure: v })}
+              className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+                (settings.chumashStructure ?? 'perek') === v ? 'bg-primary/10 border-primary text-foreground' : 'bg-card border-border text-muted-foreground'
+              }`}
+            >
+              {v === 'perek' ? 'By Perek' : 'By Parsha → Aliya'}
+            </button>
+          ))}
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection title={t('settings.categories') || 'Custom Categories'} storageKey="categories">
         <CategoryManager />
       </CollapsibleSection>
 
