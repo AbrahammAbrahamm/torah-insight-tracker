@@ -60,6 +60,8 @@ export interface StudyCategory {
   trackByLines: boolean;
   structure?: 'gemara' | 'tanach' | 'custom';
   subcategories?: SubCategory[];
+  hidden?: boolean;
+  order?: number;
 }
 
 export interface StudyGoal {
