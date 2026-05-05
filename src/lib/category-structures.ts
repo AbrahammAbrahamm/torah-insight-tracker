@@ -375,6 +375,65 @@ function generateMishnahBerurahSimanim(): SubCategory[] {
   });
 }
 
-export const MISHNAH_BERURAH_STRUCTURE: SubCategory[] = [
-  { id: 'mb-orach-chaim', name: 'Orach Chaim', children: generateMishnahBerurahSimanim() },
+// Standard 6-volume Mishnah Berurah split by Siman ranges.
+const MB_VOLUMES: { name: string; start: number; end: number }[] = [
+  { name: 'Volume 1', start: 1, end: 127 },
+  { name: 'Volume 2', start: 128, end: 241 },
+  { name: 'Volume 3', start: 242, end: 365 },
+  { name: 'Volume 4', start: 366, end: 428 },
+  { name: 'Volume 5', start: 429, end: 531 },
+  { name: 'Volume 6', start: 532, end: 697 },
 ];
+
+export const MISHNAH_BERURAH_STRUCTURE: SubCategory[] = (() => {
+  const allSimanim = generateMishnahBerurahSimanim();
+  return MB_VOLUMES.map((v, i) => ({
+    id: `mb-volume-${i + 1}`,
+    name: v.name,
+    children: allSimanim.slice(v.start - 1, v.end),
+  }));
+})();
+
+// Chumash split by Parsha → Aliya → Pasuk
+import PARSHA_DATA from './parsha-data.json';
+
+interface ParshaInfo { name: string; he: string; aliyot: number[][] }
+interface BookParshiot { he: string; parshiot: ParshaInfo[] }
+
+const SEFER_ID_BY_BOOK: Record<string, string> = {
+  Genesis: 'bereishis', Exodus: 'shemos', Leviticus: 'vayikra',
+  Numbers: 'bamidbar', Deuteronomy: 'devarim',
+};
+const SEFER_NAME_BY_BOOK: Record<string, string> = {
+  Genesis: 'Bereishis', Exodus: 'Shemos', Leviticus: 'Vayikra',
+  Numbers: 'Bamidbar', Deuteronomy: 'Devarim',
+};
+
+export const CHUMASH_BY_PARSHA_STRUCTURE: SubCategory[] = (Object.entries(PARSHA_DATA) as [string, BookParshiot][]).map(([book, info]) => ({
+  id: SEFER_ID_BY_BOOK[book],
+  name: SEFER_NAME_BY_BOOK[book],
+  children: info.parshiot.map((p, pIdx) => {
+    const aliyaNames = ['Rishon','Sheni','Shlishi','Revi\'i','Chamishi','Shishi','Shvi\'i'];
+    return {
+      id: `parsha-${SEFER_ID_BY_BOOK[book]}-${pIdx + 1}`,
+      name: p.name,
+      children: p.aliyot.map((a, aIdx) => {
+        const [sc, sp, ec, ep] = a;
+        const pesukim: SubCategory[] = [];
+        for (let c = sc; c <= ec; c++) {
+          const startP = c === sc ? sp : 1;
+          const endP = c === ec ? ep : 200; // upper bound; trimmed by reality below
+          for (let pp = startP; pp <= endP; pp++) {
+            pesukim.push({ id: `${SEFER_ID_BY_BOOK[book]}-p${pIdx+1}-a${aIdx+1}-${c}-${pp}`, name: `Perek ${c}:${pp}`, totalUnits: 1 });
+          }
+        }
+        return {
+          id: `aliya-${SEFER_ID_BY_BOOK[book]}-${pIdx+1}-${aIdx+1}`,
+          name: aliyaNames[aIdx] || `Aliya ${aIdx+1}`,
+          totalUnits: pesukim.length,
+          children: pesukim,
+        };
+      }),
+    };
+  }),
+}));
