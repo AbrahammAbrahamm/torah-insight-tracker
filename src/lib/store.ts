@@ -577,10 +577,15 @@ function useData(): DataContextValue {
 
 // ---- Backwards-compatible hook signatures (used across the app) ----
 
-export function useCategories() {
+export function useCategories(opts?: { includeHidden?: boolean }) {
   const d = useData();
+  const include = opts?.includeHidden ?? false;
+  const style = d.settings.chumashStructure ?? 'perek';
+  let cats = applyChumashStructure(d.categories, style);
+  cats = [...cats].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  if (!include) cats = cats.filter(c => !c.hidden);
   return {
-    categories: d.categories,
+    categories: cats,
     addCategory: d.addCategory,
     updateCategory: d.updateCategory,
     removeCategory: d.removeCategory,
