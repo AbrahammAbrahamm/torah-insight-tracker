@@ -49,7 +49,7 @@ function CollapsibleSection({
         <h2 className="text-sm font-semibold flex-1">{title}</h2>
         <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
-      {open && <div className="mt-2">{children}</div>}
+      {open && <div className="mt-2 ml-4 pl-2 border-l-2 border-border/60">{children}</div>}
     </section>
   );
 }
