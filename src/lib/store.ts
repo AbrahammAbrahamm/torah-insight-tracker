@@ -395,7 +395,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
-      setCategoriesState(DEFAULT_CATEGORIES);
+      setCategoriesState(migrateCategories(DEFAULT_CATEGORIES));
       setEntriesState([]);
       setGoalsState([]);
       setSettingsState(DEFAULT_SETTINGS);
