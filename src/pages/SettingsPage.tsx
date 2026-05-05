@@ -1,9 +1,11 @@
 import { useState, ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useSettings, useEntries, useCategories, useGoals } from '@/lib/store';
-import { Download, Share2, Sun, Moon, Monitor, Palette, Bell, Layout, LogIn, Languages, ChevronDown } from 'lucide-react';
+import { Download, Share2, Sun, Moon, Monitor, Palette, Bell, Layout, LogIn, Languages, ChevronDown, BookOpen, ListOrdered } from 'lucide-react';
 import { toast } from 'sonner';
 import { CategoryManager } from '@/components/CategoryManager';
+import { CategoryOrderManager } from '@/components/CategoryOrderManager';
 import { useI18n, LANGUAGES, Language } from '@/lib/i18n';
 import { useAuth } from '@/contexts/AuthContext';
 import { LogOut } from 'lucide-react';
