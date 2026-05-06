@@ -1,16 +1,21 @@
 import { useEffect, useRef } from 'react';
 import { useSettings } from '@/lib/store';
 import type { ReminderConfig } from '@/lib/store';
+import { toast } from 'sonner';
+import { Bell } from 'lucide-react';
+import { createElement } from 'react';
 
-// Lightweight in-app reminder scheduler. Uses the Web Notifications API when
-// permission is granted; otherwise no-ops silently. Fires once per reminder per
-// day at the configured time, respecting the chosen frequency.
+// Lightweight in-app reminder scheduler. Fires while the app is open using
+// setTimeout. When permission is granted we use the Web Notifications API
+// (works even when the tab is backgrounded). We always also surface an in-app
+// toast as a guaranteed visible fallback (notifications can be blocked in
+// iframes / when permission is not granted).
 
 function shouldFireToday(freq: ReminderConfig['frequency'], date: Date): boolean {
-  const day = date.getDay(); // 0=Sun..6=Sat
+  const day = date.getDay();
   if (freq === 'daily') return true;
   if (freq === 'weekdays') return day >= 1 && day <= 5;
-  if (freq === 'weekly') return day === 0; // Sunday
+  if (freq === 'weekly') return day === 0;
   return true;
 }
 
@@ -18,15 +23,33 @@ function nextOccurrence(time: string, freq: ReminderConfig['frequency'], from: D
   const [h, m] = time.split(':').map(Number);
   const candidate = new Date(from);
   candidate.setHours(h || 0, m || 0, 0, 0);
-  if (candidate <= from || !shouldFireToday(freq, candidate)) {
-    // Try subsequent days up to 7 ahead.
-    for (let i = 1; i <= 7; i++) {
-      const d = new Date(candidate);
-      d.setDate(d.getDate() + i);
-      if (shouldFireToday(freq, d) && d > from) return d;
-    }
+  if (candidate > from && shouldFireToday(freq, candidate)) return candidate;
+  for (let i = 1; i <= 7; i++) {
+    const d = new Date(candidate);
+    d.setDate(d.getDate() + i);
+    if (shouldFireToday(freq, d)) return d;
   }
-  return candidate;
+  // Fallback: tomorrow same time.
+  const fallback = new Date(candidate);
+  fallback.setDate(fallback.getDate() + 1);
+  return fallback;
+}
+
+function fireReminder(label: string) {
+  // In-app toast (always visible while app is open).
+  try {
+    toast(label || 'Reminder', {
+      description: 'Time for your learning.',
+      icon: createElement(Bell, { className: 'w-4 h-4' }),
+      duration: 10000,
+    });
+  } catch {}
+  // System notification (works backgrounded if permission granted).
+  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+    try {
+      new Notification(label || 'Reminder', { body: 'Time for your learning.' });
+    } catch {}
+  }
 }
 
 export function ReminderScheduler() {
@@ -35,13 +58,11 @@ export function ReminderScheduler() {
   const firedKeyRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    // Request permission once when any reminder is enabled.
     const anyEnabled = settings.reminders?.some(r => r.enabled);
-    if (anyEnabled && 'Notification' in window && Notification.permission === 'default') {
+    if (anyEnabled && typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission().catch(() => {});
     }
 
-    // Clear any prior timers on settings change.
     timersRef.current.forEach(id => window.clearTimeout(id));
     timersRef.current = [];
 
@@ -52,29 +73,47 @@ export function ReminderScheduler() {
       const now = new Date();
       const next = nextOccurrence(r.time, r.frequency, now);
       const delay = Math.max(1000, next.getTime() - now.getTime());
-      const key = `${r.id}@${next.toDateString()}`;
+      // Cap at 24h so timers stay accurate across DST / sleep.
+      const cappedDelay = Math.min(delay, 24 * 60 * 60 * 1000);
+      const willFire = cappedDelay === delay;
+      const key = `${r.id}@${next.toISOString()}`;
       const tid = window.setTimeout(() => {
-        if (!firedKeyRef.current.has(key)) {
+        if (willFire && !firedKeyRef.current.has(key)) {
           firedKeyRef.current.add(key);
-          if ('Notification' in window && Notification.permission === 'granted') {
-            try {
-              new Notification(r.label || 'Reminder', { body: 'Time for your learning.' });
-            } catch {}
-          }
+          fireReminder(r.label);
         }
-        // Re-schedule the next occurrence.
         schedule(r);
-      }, delay);
+      }, cappedDelay);
       timersRef.current.push(tid);
     };
 
     settings.reminders.forEach(schedule);
 
+    // Re-evaluate on focus/visibility (catches missed timers after sleep).
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        timersRef.current.forEach(id => window.clearTimeout(id));
+        timersRef.current = [];
+        settings.reminders.forEach(schedule);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+
     return () => {
       timersRef.current.forEach(id => window.clearTimeout(id));
       timersRef.current = [];
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
     };
   }, [settings.reminders]);
 
   return null;
+}
+
+export function testReminder(label: string) {
+  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission().catch(() => {});
+  }
+  fireReminder(label);
 }

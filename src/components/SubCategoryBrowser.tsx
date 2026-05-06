@@ -157,7 +157,7 @@ function SubCategoryNode({
         className={`w-full flex items-center gap-2 pr-2 py-2.5 text-left transition-colors rounded-lg hover:bg-secondary/60 ${
           depth === 0 ? 'font-semibold text-sm' : depth === 1 ? 'font-medium text-sm' : 'text-xs text-muted-foreground'
         }`}
-        style={{ paddingLeft: `${depth * 24 + 12}px` }}
+        style={{ paddingLeft: `${depth * 32 + 12}px` }}
       >
         <button
           onClick={handleClick}
