@@ -321,6 +321,12 @@ export default function SettingsPage() {
                       <option value="weekly">Weekly</option>
                     </select>
                   </div>
+                  <button
+                    onClick={() => testReminder(r.label)}
+                    className="col-span-2 py-2 rounded-lg bg-secondary text-xs font-medium hover:bg-secondary/70"
+                  >
+                    Test now
+                  </button>
                 </div>
               )}
             </div>
