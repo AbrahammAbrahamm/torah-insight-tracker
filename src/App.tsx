@@ -27,6 +27,7 @@ const App = () => (
             <TooltipProvider>
               <Toaster />
               <Sonner />
+              <ReminderScheduler />
               <Routes>
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
