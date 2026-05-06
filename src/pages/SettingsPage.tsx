@@ -297,14 +297,7 @@ export default function SettingsPage() {
                 >
                   ✕
                 </button>
-                  </div>
-                  <button
-                    onClick={() => testReminder(r.label)}
-                    className="col-span-2 mt-1 py-2 rounded-lg bg-secondary text-xs font-medium hover:bg-secondary/70"
-                  >
-                    Test now
-                  </button>
-                </div>
+              </div>
               {r.enabled && (
                 <div className="grid grid-cols-2 gap-2">
                   <div>
