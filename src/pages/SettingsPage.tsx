@@ -237,36 +237,38 @@ export default function SettingsPage() {
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title={t('settings.theme')} storageKey="theme" icon={<Palette className="w-4 h-4 text-primary" />}>
-        <div className="flex gap-2">
-          {themes.map(th => (
-            <button
-              key={th.value}
-              onClick={() => applyTheme(th.value)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
-                settings.theme === th.value ? 'bg-primary/10 border-primary text-foreground' : 'bg-card border-border text-muted-foreground'
-              }`}
-            >
-              <th.icon className="w-4 h-4" /> {th.label}
-            </button>
-          ))}
-        </div>
-      </CollapsibleSection>
+      <CollapsibleSection title="View" storageKey="view" icon={<Layout className="w-4 h-4 text-primary" />}>
+        <CollapsibleSection title={t('settings.theme')} storageKey="theme" icon={<Palette className="w-4 h-4 text-primary" />}>
+          <div className="flex gap-2">
+            {themes.map(th => (
+              <button
+                key={th.value}
+                onClick={() => applyTheme(th.value)}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+                  settings.theme === th.value ? 'bg-primary/10 border-primary text-foreground' : 'bg-card border-border text-muted-foreground'
+                }`}
+              >
+                <th.icon className="w-4 h-4" /> {th.label}
+              </button>
+            ))}
+          </div>
+        </CollapsibleSection>
 
-      <CollapsibleSection title={t('settings.density')} storageKey="density" icon={<Layout className="w-4 h-4 text-primary" />}>
-        <div className="flex gap-2">
-          {densities.map(d => (
-            <button
-              key={d.value}
-              onClick={() => updateSettings({ layoutDensity: d.value })}
-              className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
-                settings.layoutDensity === d.value ? 'bg-primary/10 border-primary text-foreground' : 'bg-card border-border text-muted-foreground'
-              }`}
-            >
-              {d.label}
-            </button>
-          ))}
-        </div>
+        <CollapsibleSection title={t('settings.density')} storageKey="density" icon={<Layout className="w-4 h-4 text-primary" />}>
+          <div className="flex gap-2">
+            {densities.map(d => (
+              <button
+                key={d.value}
+                onClick={() => updateSettings({ layoutDensity: d.value })}
+                className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+                  settings.layoutDensity === d.value ? 'bg-primary/10 border-primary text-foreground' : 'bg-card border-border text-muted-foreground'
+                }`}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+        </CollapsibleSection>
       </CollapsibleSection>
 
       <CollapsibleSection title={t('settings.reminders')} storageKey="reminders" icon={<Bell className="w-4 h-4 text-primary" />}>
