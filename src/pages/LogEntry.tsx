@@ -122,49 +122,15 @@ export default function LogEntry() {
       <PageHeader title={t('log.title')} subtitle={t('log.subtitle')} />
 
       <div className="space-y-4">
-        {/* Category Selection */}
-        <div>
-          <label className="text-xs font-medium text-muted-foreground">{t('log.category')}</label>
-          <div className="flex flex-wrap gap-2 mt-1.5">
-            {categories.map(cat => (
-              <button
-                key={cat.id}
-                onClick={() => setCategoryId(cat.id)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm transition-colors ${
-                  categoryId === cat.id
-                    ? 'bg-primary/10 border-primary text-foreground'
-                    : 'bg-card border-border text-muted-foreground'
-                }`}
-              >
-                <span>{cat.icon}</span> {tn(cat.name)}
-              </button>
-            ))}
+        {/* Header: unit + category label */}
+        <div className="bg-card border rounded-xl p-3">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            {selectedCategory && <span>{selectedCategory.icon}</span>}
+            <span>{selectedCategory ? tn(selectedCategory.name) : t('log.category')}</span>
           </div>
-        </div>
-
-        {/* Unit Name + compact Date on same row */}
-        <div className="flex gap-2 items-end">
-          <div className="flex-1 min-w-0">
-            <label className="text-xs font-medium text-muted-foreground">{unitLabel}</label>
-            <input
-              className="w-full mt-1 px-3 py-2.5 bg-background border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-              value={unit}
-              onChange={e => setUnit(e.target.value)}
-              placeholder={
-                selectedCategory?.structure === 'gemara' ? 'e.g., Bava Metzia 2a' :
-                selectedCategory?.structure === 'tanach' ? 'e.g., Bereishis 1:1-10' : 'Enter unit name'
-              }
-            />
-          </div>
-          <div className="shrink-0">
-            <label className="text-xs font-medium text-muted-foreground">{t('log.date')}</label>
-            <input
-              type="date"
-              className="mt-1 px-2 py-2.5 bg-background border rounded-lg text-xs w-[140px]"
-              value={date}
-              onChange={e => setDate(e.target.value)}
-            />
-          </div>
+          <p className="mt-1 text-base font-semibold truncate">
+            {unit.trim() || t('log.fillUnit')}
+          </p>
         </div>
 
         {/* Components */}
