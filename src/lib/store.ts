@@ -180,7 +180,6 @@ const DEFAULT_SETTINGS: AppSettings = {
   reminderDays: [0, 1, 2, 3, 4],
   reminders: [
     { id: 'daf-yomi', type: 'daf-yomi', label: 'Daf Yomi', enabled: false, time: '07:00', frequency: 'daily' },
-    { id: 'review-daf-yomi', type: 'review-daf-yomi', label: 'Review Daf Yomi', enabled: false, time: '21:00', frequency: 'daily' },
     { id: 'shnayim-mikra', type: 'shnayim-mikra', label: 'Shnayim Mikra', enabled: false, time: '15:00', frequency: 'weekly' },
   ],
   chumashStructure: 'perek',
