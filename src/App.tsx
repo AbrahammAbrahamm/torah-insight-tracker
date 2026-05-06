@@ -8,6 +8,7 @@ import { I18nProvider } from "@/components/I18nProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { DataProvider } from "@/lib/store";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { ReminderScheduler } from "@/components/ReminderScheduler";
 import Categories from "./pages/Categories";
 import LogEntry from "./pages/LogEntry";
 import Analytics from "./pages/Analytics";
