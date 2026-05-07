@@ -430,6 +430,8 @@ export default function SettingsPage() {
           ))}
         </div>
       </CollapsibleSection>
+
+      <CollapsibleSection title={t('settings.categories') || 'Custom Categories'} storageKey="categories">
         <CategoryManager />
       </CollapsibleSection>
 
