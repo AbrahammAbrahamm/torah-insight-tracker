@@ -226,6 +226,9 @@ const DEFAULT_SETTINGS: AppSettings = {
     { id: 'shnayim-mikra', type: 'shnayim-mikra', label: 'Shnayim Mikra', enabled: false, time: '15:00', frequency: 'weekly' },
   ],
   chumashStructure: 'perek',
+  rambamStructure: 'books',
+  mussarSefarim: [],
+  pushNotificationsEnabled: false,
 };
 
 function loadFromStorage<T>(key: string, fallback: T): T {
@@ -309,6 +312,16 @@ function migrateCategories(cats: StudyCategory[]): StudyCategory[] {
     const mb = DEFAULT_CATEGORIES.find(c => c.id === 'mishnah-berurah');
     if (mb) result = [...result, mb];
   }
+  // Ensure Rambam category exists.
+  if (!result.some(c => c.id === 'rambam')) {
+    const r = DEFAULT_CATEGORIES.find(c => c.id === 'rambam');
+    if (r) result = [...result, r];
+  }
+  // Ensure Mussar/Chasidus category exists.
+  if (!result.some(c => c.id === 'mussar-chasidus')) {
+    const m = DEFAULT_CATEGORIES.find(c => c.id === 'mussar-chasidus');
+    if (m) result = [...result, m];
+  }
   // Remove legacy "Mishnah Berurah" from Halacha default components.
   result = result.map(c => {
     if (c.id === 'halacha' && c.defaultComponents?.some(n => /mishnah?\s*berurah/i.test(n))) {
@@ -317,7 +330,7 @@ function migrateCategories(cats: StudyCategory[]): StudyCategory[] {
     return c;
   });
   // Enforce canonical order for known built-in categories.
-  const ORDER = ['chumash', 'nach', 'mishnayos', 'gemara', 'halacha', 'mishnah-berurah'];
+  const ORDER = ['chumash', 'nach', 'mishnayos', 'gemara', 'halacha', 'mishnah-berurah', 'rambam', 'mussar-chasidus'];
   const known = ORDER
     .map(id => result.find(c => c.id === id))
     .filter((c): c is StudyCategory => !!c);
