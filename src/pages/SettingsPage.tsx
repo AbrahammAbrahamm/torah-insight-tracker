@@ -5,7 +5,8 @@ import { useSettings, useEntries, useCategories, useGoals } from '@/lib/store';
 import { Download, Share2, Sun, Moon, Monitor, Palette, Bell, Layout, LogIn, Languages, ChevronDown, BookOpen, ListOrdered } from 'lucide-react';
 import { toast } from 'sonner';
 import { CategoryManager } from '@/components/CategoryManager';
-import { testReminder } from '@/components/ReminderScheduler';
+import { testReminder, enablePushNotifications } from '@/components/ReminderScheduler';
+import { MUSSAR_SEFARIM } from '@/lib/mussar-data';
 import { CategoryOrderManager } from '@/components/CategoryOrderManager';
 import { useI18n, LANGUAGES, Language } from '@/lib/i18n';
 import { useAuth } from '@/contexts/AuthContext';
@@ -273,6 +274,27 @@ export default function SettingsPage() {
       </CollapsibleSection>
 
       <CollapsibleSection title={t('settings.reminders')} storageKey="reminders" icon={<Bell className="w-4 h-4 text-primary" />}>
+        <div className="mb-2 bg-card border rounded-xl p-3 flex items-center justify-between">
+          <div className="min-w-0 pr-2">
+            <p className="text-sm font-medium">Phone notifications</p>
+            <p className="text-xs text-muted-foreground">Pop up on your device, even if the app is closed (install as app for best results)</p>
+          </div>
+          <button
+            onClick={async () => {
+              if (settings.pushNotificationsEnabled) {
+                updateSettings({ pushNotificationsEnabled: false });
+                toast.success('Notifications disabled');
+              } else {
+                const ok = await enablePushNotifications();
+                if (ok) updateSettings({ pushNotificationsEnabled: true });
+              }
+            }}
+            className={`shrink-0 w-11 h-6 rounded-full transition-colors relative ${settings.pushNotificationsEnabled ? 'bg-primary' : 'bg-secondary'}`}
+            aria-label="Toggle push notifications"
+          >
+            <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-primary-foreground shadow transition-transform ${settings.pushNotificationsEnabled ? 'left-[22px]' : 'left-0.5'}`} />
+          </button>
+        </div>
         <div className="space-y-2">
           {settings.reminders.map(r => (
             <div key={r.id} className="bg-card border rounded-xl p-3 space-y-3">
@@ -360,6 +382,51 @@ export default function SettingsPage() {
             >
               {v === 'perek' ? 'By Perek' : 'By Parsha → Aliya'}
             </button>
+          ))}
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Rambam structure" storageKey="rambam-structure" icon={<BookOpen className="w-4 h-4 text-primary" />}>
+        <div className="flex gap-2">
+          {(['books','yomi'] as const).map(v => (
+            <button key={v}
+              onClick={() => updateSettings({ rambamStructure: v })}
+              className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+                (settings.rambamStructure ?? 'books') === v ? 'bg-primary/10 border-primary text-foreground' : 'bg-card border-border text-muted-foreground'
+              }`}
+            >
+              {v === 'books' ? '14 Books → Halachot → Perek' : 'Rambam Yomi (3 perakim/day)'}
+            </button>
+          ))}
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Mussar / Chasidus seforim" storageKey="mussar-list" icon={<BookOpen className="w-4 h-4 text-primary" />}>
+        <div className="bg-card border rounded-xl divide-y max-h-[400px] overflow-y-auto">
+          {(['mussar','chasidus'] as const).map(group => (
+            <div key={group}>
+              <p className="px-3 py-2 text-xs font-semibold uppercase text-muted-foreground bg-secondary/30">{group === 'mussar' ? 'Mussar' : 'Chasidus'}</p>
+              {MUSSAR_SEFARIM.filter(s => s.type === group).map(s => {
+                const enabled = (settings.mussarSefarim ?? []).includes(s.id);
+                return (
+                  <label key={s.id} className="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-secondary/40">
+                    <input
+                      type="checkbox"
+                      checked={enabled}
+                      onChange={e => {
+                        const cur = settings.mussarSefarim ?? [];
+                        updateSettings({
+                          mussarSefarim: e.target.checked
+                            ? [...cur, s.id]
+                            : cur.filter(x => x !== s.id),
+                        });
+                      }}
+                    />
+                    <span className="text-sm">{s.name}</span>
+                  </label>
+                );
+              })}
+            </div>
           ))}
         </div>
       </CollapsibleSection>

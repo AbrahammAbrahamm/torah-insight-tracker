@@ -7,9 +7,8 @@ import { createElement } from 'react';
 
 // Lightweight in-app reminder scheduler. Fires while the app is open using
 // setTimeout. When permission is granted we use the Web Notifications API
-// (works even when the tab is backgrounded). We always also surface an in-app
-// toast as a guaranteed visible fallback (notifications can be blocked in
-// iframes / when permission is not granted).
+// via the Service Worker (works even when the tab is backgrounded — and on
+// mobile, when the PWA is installed, fires even when the app is closed).
 
 function shouldFireToday(freq: ReminderConfig['frequency'], date: Date): boolean {
   const day = date.getDay();
@@ -29,14 +28,25 @@ function nextOccurrence(time: string, freq: ReminderConfig['frequency'], from: D
     d.setDate(d.getDate() + i);
     if (shouldFireToday(freq, d)) return d;
   }
-  // Fallback: tomorrow same time.
   const fallback = new Date(candidate);
   fallback.setDate(fallback.getDate() + 1);
   return fallback;
 }
 
+async function showSystemNotification(title: string, body: string, tag?: string) {
+  if (typeof window === 'undefined' || !('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return;
+  try {
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.ready;
+      await reg.showNotification(title, { body, tag, requireInteraction: true, icon: '/placeholder.svg', badge: '/placeholder.svg' });
+      return;
+    }
+  } catch {}
+  try { new Notification(title, { body }); } catch {}
+}
+
 function fireReminder(label: string) {
-  // In-app toast (always visible while app is open).
   try {
     toast(label || 'Reminder', {
       description: 'Time for your learning.',
@@ -44,12 +54,31 @@ function fireReminder(label: string) {
       duration: 10000,
     });
   } catch {}
-  // System notification (works backgrounded if permission granted).
-  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-    try {
-      new Notification(label || 'Reminder', { body: 'Time for your learning.' });
-    } catch {}
+  showSystemNotification(label || 'Reminder', 'Time for your learning.', `reminder-${label}-${Date.now()}`);
+}
+
+export async function enablePushNotifications(): Promise<boolean> {
+  if (typeof window === 'undefined' || !('Notification' in window)) {
+    toast.error('Notifications not supported on this device');
+    return false;
   }
+  try {
+    if ('serviceWorker' in navigator) {
+      await navigator.serviceWorker.register('/sw.js');
+    }
+  } catch (e) {
+    console.warn('SW register failed', e);
+  }
+  let perm = Notification.permission;
+  if (perm === 'default') {
+    perm = await Notification.requestPermission();
+  }
+  if (perm !== 'granted') {
+    toast.error('Notifications permission denied');
+    return false;
+  }
+  toast.success('Notifications enabled');
+  return true;
 }
 
 export function ReminderScheduler() {
@@ -58,9 +87,8 @@ export function ReminderScheduler() {
   const firedKeyRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    const anyEnabled = settings.reminders?.some(r => r.enabled);
-    if (anyEnabled && typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission().catch(() => {});
+    if (settings.pushNotificationsEnabled && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
 
     timersRef.current.forEach(id => window.clearTimeout(id));
@@ -73,7 +101,6 @@ export function ReminderScheduler() {
       const now = new Date();
       const next = nextOccurrence(r.time, r.frequency, now);
       const delay = Math.max(1000, next.getTime() - now.getTime());
-      // Cap at 24h so timers stay accurate across DST / sleep.
       const cappedDelay = Math.min(delay, 24 * 60 * 60 * 1000);
       const willFire = cappedDelay === delay;
       const key = `${r.id}@${next.toISOString()}`;
@@ -89,7 +116,6 @@ export function ReminderScheduler() {
 
     settings.reminders.forEach(schedule);
 
-    // Re-evaluate on focus/visibility (catches missed timers after sleep).
     const onVisible = () => {
       if (document.visibilityState === 'visible') {
         timersRef.current.forEach(id => window.clearTimeout(id));
@@ -106,7 +132,7 @@ export function ReminderScheduler() {
       document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('focus', onVisible);
     };
-  }, [settings.reminders]);
+  }, [settings.reminders, settings.pushNotificationsEnabled]);
 
   return null;
 }

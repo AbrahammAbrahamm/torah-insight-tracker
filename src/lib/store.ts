@@ -1,6 +1,8 @@
 // Supabase-backed store for Torah learning data (with localStorage migration)
 import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode, createElement } from 'react';
 import { SubCategory, GEMARA_STRUCTURE, TANACH_STRUCTURE, MISHNAYOS_STRUCTURE, HALACHA_STRUCTURE, CHUMASH_STRUCTURE, CHUMASH_BY_PARSHA_STRUCTURE, TANACH_NACH_STRUCTURE, MISHNAH_BERURAH_STRUCTURE } from './category-structures';
+import { RAMBAM_BY_BOOKS_STRUCTURE, RAMBAM_BY_YOMI_STRUCTURE } from './rambam-data';
+import { buildMussarStructure } from './mussar-data';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -16,7 +18,23 @@ const BUILTIN_STRUCTURES: Record<string, SubCategory[]> = {
   nach: TANACH_NACH_STRUCTURE,
   halacha: HALACHA_STRUCTURE,
   'mishnah-berurah': MISHNAH_BERURAH_STRUCTURE,
+  rambam: RAMBAM_BY_BOOKS_STRUCTURE,
+  'mussar-chasidus': [],
 };
+
+export function applyRambamStructure(cats: StudyCategory[], style: 'books' | 'yomi'): StudyCategory[] {
+  return cats.map(c => {
+    if (c.id !== 'rambam') return c;
+    return { ...c, subcategories: style === 'yomi' ? RAMBAM_BY_YOMI_STRUCTURE : RAMBAM_BY_BOOKS_STRUCTURE };
+  });
+}
+
+export function applyMussarStructure(cats: StudyCategory[], enabledIds: string[]): StudyCategory[] {
+  return cats.map(c => {
+    if (c.id !== 'mussar-chasidus') return c;
+    return { ...c, subcategories: buildMussarStructure(enabledIds) };
+  });
+}
 
 function withDefaultSubcategories(cat: StudyCategory): StudyCategory {
   const builtin = BUILTIN_STRUCTURES[cat.id];
@@ -101,6 +119,9 @@ export interface AppSettings {
   reminderDays: number[];
   reminders: ReminderConfig[];
   chumashStructure?: 'perek' | 'parsha';
+  rambamStructure?: 'books' | 'yomi';
+  mussarSefarim?: string[];
+  pushNotificationsEnabled?: boolean;
 }
 
 const DEFAULT_CATEGORIES: StudyCategory[] = [
@@ -170,6 +191,28 @@ const DEFAULT_CATEGORIES: StudyCategory[] = [
     structure: 'tanach',
     subcategories: TANACH_NACH_STRUCTURE,
   },
+  {
+    id: 'rambam',
+    name: 'Rambam',
+    icon: '📕',
+    unitType: 'perek',
+    defaultComponents: ['Rambam Text'],
+    color: '0 50% 45%',
+    trackByLines: false,
+    structure: 'custom',
+    subcategories: RAMBAM_BY_BOOKS_STRUCTURE,
+  },
+  {
+    id: 'mussar-chasidus',
+    name: 'Mussar / Chasidus',
+    icon: '✨',
+    unitType: 'perek',
+    defaultComponents: ['Text'],
+    color: '260 40% 50%',
+    trackByLines: false,
+    structure: 'custom',
+    subcategories: [],
+  },
 ];
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -183,6 +226,9 @@ const DEFAULT_SETTINGS: AppSettings = {
     { id: 'shnayim-mikra', type: 'shnayim-mikra', label: 'Shnayim Mikra', enabled: false, time: '15:00', frequency: 'weekly' },
   ],
   chumashStructure: 'perek',
+  rambamStructure: 'books',
+  mussarSefarim: [],
+  pushNotificationsEnabled: false,
 };
 
 function loadFromStorage<T>(key: string, fallback: T): T {
@@ -266,6 +312,16 @@ function migrateCategories(cats: StudyCategory[]): StudyCategory[] {
     const mb = DEFAULT_CATEGORIES.find(c => c.id === 'mishnah-berurah');
     if (mb) result = [...result, mb];
   }
+  // Ensure Rambam category exists.
+  if (!result.some(c => c.id === 'rambam')) {
+    const r = DEFAULT_CATEGORIES.find(c => c.id === 'rambam');
+    if (r) result = [...result, r];
+  }
+  // Ensure Mussar/Chasidus category exists.
+  if (!result.some(c => c.id === 'mussar-chasidus')) {
+    const m = DEFAULT_CATEGORIES.find(c => c.id === 'mussar-chasidus');
+    if (m) result = [...result, m];
+  }
   // Remove legacy "Mishnah Berurah" from Halacha default components.
   result = result.map(c => {
     if (c.id === 'halacha' && c.defaultComponents?.some(n => /mishnah?\s*berurah/i.test(n))) {
@@ -274,7 +330,7 @@ function migrateCategories(cats: StudyCategory[]): StudyCategory[] {
     return c;
   });
   // Enforce canonical order for known built-in categories.
-  const ORDER = ['chumash', 'nach', 'mishnayos', 'gemara', 'halacha', 'mishnah-berurah'];
+  const ORDER = ['chumash', 'nach', 'mishnayos', 'gemara', 'halacha', 'mishnah-berurah', 'rambam', 'mussar-chasidus'];
   const known = ORDER
     .map(id => result.find(c => c.id === id))
     .filter((c): c is StudyCategory => !!c);
@@ -581,7 +637,11 @@ export function useCategories(opts?: { includeHidden?: boolean }) {
   const d = useData();
   const include = opts?.includeHidden ?? false;
   const style = d.settings.chumashStructure ?? 'perek';
+  const rambamStyle = d.settings.rambamStructure ?? 'books';
+  const mussarIds = d.settings.mussarSefarim ?? [];
   let cats = applyChumashStructure(d.categories, style);
+  cats = applyRambamStructure(cats, rambamStyle);
+  cats = applyMussarStructure(cats, mussarIds);
   cats = [...cats].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   if (!include) cats = cats.filter(c => !c.hidden);
   return {
