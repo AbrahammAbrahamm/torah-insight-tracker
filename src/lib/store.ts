@@ -637,7 +637,11 @@ export function useCategories(opts?: { includeHidden?: boolean }) {
   const d = useData();
   const include = opts?.includeHidden ?? false;
   const style = d.settings.chumashStructure ?? 'perek';
+  const rambamStyle = d.settings.rambamStructure ?? 'books';
+  const mussarIds = d.settings.mussarSefarim ?? [];
   let cats = applyChumashStructure(d.categories, style);
+  cats = applyRambamStructure(cats, rambamStyle);
+  cats = applyMussarStructure(cats, mussarIds);
   cats = [...cats].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   if (!include) cats = cats.filter(c => !c.hidden);
   return {
