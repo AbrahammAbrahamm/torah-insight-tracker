@@ -191,6 +191,28 @@ const DEFAULT_CATEGORIES: StudyCategory[] = [
     structure: 'tanach',
     subcategories: TANACH_NACH_STRUCTURE,
   },
+  {
+    id: 'rambam',
+    name: 'Rambam',
+    icon: '📕',
+    unitType: 'perek',
+    defaultComponents: ['Rambam Text'],
+    color: '0 50% 45%',
+    trackByLines: false,
+    structure: 'custom',
+    subcategories: RAMBAM_BY_BOOKS_STRUCTURE,
+  },
+  {
+    id: 'mussar-chasidus',
+    name: 'Mussar / Chasidus',
+    icon: '✨',
+    unitType: 'perek',
+    defaultComponents: ['Text'],
+    color: '260 40% 50%',
+    trackByLines: false,
+    structure: 'custom',
+    subcategories: [],
+  },
 ];
 
 const DEFAULT_SETTINGS: AppSettings = {
