@@ -1,6 +1,8 @@
 // Supabase-backed store for Torah learning data (with localStorage migration)
 import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode, createElement } from 'react';
 import { SubCategory, GEMARA_STRUCTURE, TANACH_STRUCTURE, MISHNAYOS_STRUCTURE, HALACHA_STRUCTURE, CHUMASH_STRUCTURE, CHUMASH_BY_PARSHA_STRUCTURE, TANACH_NACH_STRUCTURE, MISHNAH_BERURAH_STRUCTURE } from './category-structures';
+import { RAMBAM_BY_BOOKS_STRUCTURE, RAMBAM_BY_YOMI_STRUCTURE } from './rambam-data';
+import { buildMussarStructure } from './mussar-data';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -16,7 +18,23 @@ const BUILTIN_STRUCTURES: Record<string, SubCategory[]> = {
   nach: TANACH_NACH_STRUCTURE,
   halacha: HALACHA_STRUCTURE,
   'mishnah-berurah': MISHNAH_BERURAH_STRUCTURE,
+  rambam: RAMBAM_BY_BOOKS_STRUCTURE,
+  'mussar-chasidus': [],
 };
+
+export function applyRambamStructure(cats: StudyCategory[], style: 'books' | 'yomi'): StudyCategory[] {
+  return cats.map(c => {
+    if (c.id !== 'rambam') return c;
+    return { ...c, subcategories: style === 'yomi' ? RAMBAM_BY_YOMI_STRUCTURE : RAMBAM_BY_BOOKS_STRUCTURE };
+  });
+}
+
+export function applyMussarStructure(cats: StudyCategory[], enabledIds: string[]): StudyCategory[] {
+  return cats.map(c => {
+    if (c.id !== 'mussar-chasidus') return c;
+    return { ...c, subcategories: buildMussarStructure(enabledIds) };
+  });
+}
 
 function withDefaultSubcategories(cat: StudyCategory): StudyCategory {
   const builtin = BUILTIN_STRUCTURES[cat.id];
@@ -101,6 +119,9 @@ export interface AppSettings {
   reminderDays: number[];
   reminders: ReminderConfig[];
   chumashStructure?: 'perek' | 'parsha';
+  rambamStructure?: 'books' | 'yomi';
+  mussarSefarim?: string[];
+  pushNotificationsEnabled?: boolean;
 }
 
 const DEFAULT_CATEGORIES: StudyCategory[] = [
