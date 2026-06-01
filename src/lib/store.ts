@@ -121,6 +121,7 @@ export interface AppSettings {
   chumashStructure?: 'perek' | 'parsha';
   rambamStructure?: 'books' | 'yomi';
   mussarSefarim?: string[];
+  mussarInitialized?: boolean;
   pushNotificationsEnabled?: boolean;
 }
 
@@ -227,7 +228,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   ],
   chumashStructure: 'perek',
   rambamStructure: 'books',
-  mussarSefarim: [],
+  mussarSefarim: ['mesilas-yesharim', 'shaarei-teshuvah', 'chovos-halevavos', 'orchos-tzaddikim', 'pirkei-avos', 'tomer-devorah', 'shemiras-halashon', 'chofetz-chaim', 'tanya', 'likutei-moharan', 'noam-elimelech', 'kedushas-levi', 'sfas-emes', 'derech-hashem'],
   pushNotificationsEnabled: false,
 };
 
@@ -490,9 +491,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setEntriesState((entriesRes.data ?? []).map(entryFromRow));
         setGoalsState((goalsRes.data ?? []).map(goalFromRow));
 
-        const loadedSettings = settingsRes.data?.settings
-          ? { ...DEFAULT_SETTINGS, ...(settingsRes.data.settings as any), reminders: (settingsRes.data.settings as any).reminders ?? DEFAULT_SETTINGS.reminders }
+        const rawSettings = settingsRes.data?.settings as any;
+        let loadedSettings: AppSettings = rawSettings
+          ? { ...DEFAULT_SETTINGS, ...rawSettings, reminders: rawSettings.reminders ?? DEFAULT_SETTINGS.reminders }
           : DEFAULT_SETTINGS;
+        // Migration: if mussarSefarim wasn't explicitly initialized, seed defaults.
+        if (!rawSettings?.mussarInitialized && (!loadedSettings.mussarSefarim || loadedSettings.mussarSefarim.length === 0)) {
+          loadedSettings = { ...loadedSettings, mussarSefarim: DEFAULT_SETTINGS.mussarSefarim, mussarInitialized: true } as any;
+        }
         setSettingsState(loadedSettings);
       } catch (e: any) {
         console.error('Data load failed', e);
