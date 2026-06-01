@@ -227,7 +227,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   ],
   chumashStructure: 'perek',
   rambamStructure: 'books',
-  mussarSefarim: [],
+  mussarSefarim: ['mesilas-yesharim', 'shaarei-teshuvah', 'chovos-halevavos', 'orchos-tzaddikim', 'pirkei-avos', 'tomer-devorah', 'shemiras-halashon', 'chofetz-chaim', 'tanya', 'likutei-moharan', 'noam-elimelech', 'kedushas-levi', 'sfas-emes', 'derech-hashem'],
   pushNotificationsEnabled: false,
 };
 
