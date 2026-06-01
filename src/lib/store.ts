@@ -1,5 +1,5 @@
 // Supabase-backed store for Torah learning data (with localStorage migration)
-import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode, createElement } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef, ReactNode, createElement } from 'react';
 import { SubCategory, GEMARA_STRUCTURE, TANACH_STRUCTURE, MISHNAYOS_STRUCTURE, HALACHA_STRUCTURE, CHUMASH_STRUCTURE, CHUMASH_BY_PARSHA_STRUCTURE, TANACH_NACH_STRUCTURE, MISHNAH_BERURAH_STRUCTURE } from './category-structures';
 import { RAMBAM_BY_BOOKS_STRUCTURE, RAMBAM_BY_YOMI_STRUCTURE } from './rambam-data';
 import { buildMussarStructure } from './mussar-data';
