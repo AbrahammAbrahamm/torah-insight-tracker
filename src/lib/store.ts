@@ -121,6 +121,7 @@ export interface AppSettings {
   chumashStructure?: 'perek' | 'parsha';
   rambamStructure?: 'books' | 'yomi';
   mussarSefarim?: string[];
+  mussarInitialized?: boolean;
   pushNotificationsEnabled?: boolean;
 }
 
