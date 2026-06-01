@@ -1,5 +1,5 @@
 // Supabase-backed store for Torah learning data (with localStorage migration)
-import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode, createElement } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef, ReactNode, createElement } from 'react';
 import { SubCategory, GEMARA_STRUCTURE, TANACH_STRUCTURE, MISHNAYOS_STRUCTURE, HALACHA_STRUCTURE, CHUMASH_STRUCTURE, CHUMASH_BY_PARSHA_STRUCTURE, TANACH_NACH_STRUCTURE, MISHNAH_BERURAH_STRUCTURE } from './category-structures';
 import { RAMBAM_BY_BOOKS_STRUCTURE, RAMBAM_BY_YOMI_STRUCTURE } from './rambam-data';
 import { buildMussarStructure } from './mussar-data';
@@ -639,13 +639,22 @@ export function useCategories(opts?: { includeHidden?: boolean }) {
   const style = d.settings.chumashStructure ?? 'perek';
   const rambamStyle = d.settings.rambamStructure ?? 'books';
   const mussarIds = d.settings.mussarSefarim ?? [];
-  let cats = applyChumashStructure(d.categories, style);
-  cats = applyRambamStructure(cats, rambamStyle);
-  cats = applyMussarStructure(cats, mussarIds);
-  cats = [...cats].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  if (!include) cats = cats.filter(c => !c.hidden);
+  // Memoize the derived pipeline so categories has a stable reference between renders
+  // unless an input actually changes. Without this, every render produced a new array
+  // (and new category objects), breaking referential equality in downstream effects
+  // and causing infinite re-render loops in pages like LogEntry.
+  const mussarKey = mussarIds.join(',');
+  const categories = useMemo(() => {
+    let cats = applyChumashStructure(d.categories, style);
+    cats = applyRambamStructure(cats, rambamStyle);
+    cats = applyMussarStructure(cats, mussarIds);
+    cats = [...cats].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    if (!include) cats = cats.filter(c => !c.hidden);
+    return cats;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [d.categories, style, rambamStyle, mussarKey, include]);
   return {
-    categories: cats,
+    categories,
     addCategory: d.addCategory,
     updateCategory: d.updateCategory,
     removeCategory: d.removeCategory,
