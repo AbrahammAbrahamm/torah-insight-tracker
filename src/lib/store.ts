@@ -277,6 +277,15 @@ export function isEntryCompleted(e: LearningEntry): boolean {
   return !!e.components[0]?.learned;
 }
 
+// Build the completed-units Set from an entries array. Used by tests and SSR-style code.
+export function buildCompletedSet(entries: LearningEntry[]): Set<string> {
+  const s = new Set<string>();
+  for (const e of entries) {
+    if (isEntryCompleted(e)) s.add(normalizeUnitKey(e.unit, e.categoryId));
+  }
+  return s;
+}
+
 export function findLatestEntryForUnit(
   entries: LearningEntry[],
   categoryId: string,
