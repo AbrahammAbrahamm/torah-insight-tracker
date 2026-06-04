@@ -1,9 +1,17 @@
-import { useState } from 'react';
+import { useState, memo, useMemo } from 'react';
 import { SubCategory } from '@/lib/category-structures';
 import { ChevronRight, ChevronDown, BookOpen, CheckCircle2, CheckCheck, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { List, type RowComponentProps } from 'react-window';
 import { useNavigate } from 'react-router-dom';
-import { useEntries, useCategories, LearningEntry, LearningComponent, unitsMatch } from '@/lib/store';
+import {
+  useEntries,
+  useCategories,
+  useCompletedUnits,
+  LearningEntry,
+  LearningComponent,
+  unitsMatch,
+  normalizeUnitKey,
+} from '@/lib/store';
 import { useI18n } from '@/lib/i18n';
 import { toast } from 'sonner';
 
@@ -19,76 +27,67 @@ function buildUnitLabel(parentPath: string[], node: SubCategory): string {
   return `${masechta} ${cleanName}`.trim();
 }
 
-function getLeafProgress(entries: LearningEntry[], categoryId: string, unitLabel: string): number {
-  const matches = entries.filter(
-    e => e.categoryId === categoryId && unitsMatch(e.unit, unitLabel, categoryId)
-  );
-  if (matches.length === 0) return 0;
-  // An item is considered learned if its FIRST component is marked learned.
-  // Additional components are extras that don't affect completion status.
-  for (const e of matches) {
-    if (e.components.length === 0) return 1;
-    if (e.components[0].learned) return 1;
-  }
-  return 0;
+function getLeafProgress(completed: Set<string>, categoryId: string, unitLabel: string): number {
+  return completed.has(normalizeUnitKey(unitLabel, categoryId)) ? 1 : 0;
 }
 
 export function getNodeProgress(
   node: SubCategory,
   categoryId: string,
   parentPath: string[],
-  entries: LearningEntry[]
+  completed: Set<string>
 ): { fraction: number; leafCount: number; completedLeaves: number } {
   if (!node.children || node.children.length === 0) {
     const label = buildUnitLabel(parentPath, node);
-    const frac = getLeafProgress(entries, categoryId, label);
+    const frac = getLeafProgress(completed, categoryId, label);
     return { fraction: frac, leafCount: 1, completedLeaves: frac >= 0.999 ? 1 : 0 };
   }
   let totalFrac = 0;
   let leafCount = 0;
-  let completed = 0;
+  let doneCount = 0;
+  const childPath = [...parentPath, node.name];
   for (const child of node.children) {
-    const sub = getNodeProgress(child, categoryId, [...parentPath, node.name], entries);
+    const sub = getNodeProgress(child, categoryId, childPath, completed);
     totalFrac += sub.fraction * sub.leafCount;
     leafCount += sub.leafCount;
-    completed += sub.completedLeaves;
+    doneCount += sub.completedLeaves;
   }
   return {
     fraction: leafCount > 0 ? totalFrac / leafCount : 0,
     leafCount,
-    completedLeaves: completed,
+    completedLeaves: doneCount,
   };
 }
 
 export function getCategoryProgress(
   subcategories: SubCategory[],
   categoryId: string,
-  entries: LearningEntry[]
+  completed: Set<string>
 ): { fraction: number; leafCount: number; completedLeaves: number } {
   let totalFrac = 0;
   let leafCount = 0;
-  let completed = 0;
+  let doneCount = 0;
   for (const child of subcategories) {
-    const sub = getNodeProgress(child, categoryId, [], entries);
+    const sub = getNodeProgress(child, categoryId, [], completed);
     totalFrac += sub.fraction * sub.leafCount;
     leafCount += sub.leafCount;
-    completed += sub.completedLeaves;
+    doneCount += sub.completedLeaves;
   }
   return {
     fraction: leafCount > 0 ? totalFrac / leafCount : 0,
     leafCount,
-    completedLeaves: completed,
+    completedLeaves: doneCount,
   };
 }
 
-// Collect all leaf labels under a node (for bulk logging).
 function collectLeafLabels(node: SubCategory, parentPath: string[], out: string[]) {
   if (!node.children || node.children.length === 0) {
     out.push(buildUnitLabel(parentPath, node));
     return;
   }
+  const childPath = [...parentPath, node.name];
   for (const child of node.children) {
-    collectLeafLabels(child, [...parentPath, node.name], out);
+    collectLeafLabels(child, childPath, out);
   }
 }
 
@@ -103,25 +102,27 @@ function ProgressBar({ value, tone }: { value: number; tone: 'success' | 'primar
   );
 }
 
-function SubCategoryNode({
-  node,
-  depth = 0,
-  path = [],
-  categoryId,
-  entries,
-  onLogLeaf,
-  onLogAll,
-  onUnlogAll,
-}: {
+interface NodeProps {
   node: SubCategory;
-  depth?: number;
-  path?: string[];
+  depth: number;
+  path: string[];
   categoryId: string;
-  entries: LearningEntry[];
+  completed: Set<string>;
   onLogLeaf: (unitLabel: string) => void;
   onLogAll: (node: SubCategory, path: string[]) => void;
   onUnlogAll: (node: SubCategory, path: string[]) => void;
-}) {
+}
+
+const SubCategoryNode = memo(function SubCategoryNode({
+  node,
+  depth,
+  path,
+  categoryId,
+  completed,
+  onLogLeaf,
+  onLogAll,
+  onUnlogAll,
+}: NodeProps) {
   const nodeKey = `torahTracker_open_${categoryId}_${[...path, node.name].join('>')}`;
   const [isOpen, setIsOpen] = useState<boolean>(() => {
     try { return sessionStorage.getItem(nodeKey) === '1'; } catch { return false; }
@@ -134,11 +135,11 @@ function SubCategoryNode({
     } catch {}
   };
   const { tn } = useI18n();
-  const hasChildren = node.children && node.children.length > 0;
-  const currentPath = [...path, node.name];
+  const hasChildren = !!(node.children && node.children.length > 0);
+  const currentPath = useMemo(() => [...path, node.name], [path, node.name]);
 
   const leafLabel = !hasChildren ? buildUnitLabel(path, node) : '';
-  const progress = getNodeProgress(node, categoryId, path, entries);
+  const progress = getNodeProgress(node, categoryId, path, completed);
   const pct = Math.round(progress.fraction * 100);
   const tone: 'success' | 'primary' | 'muted' =
     pct >= 100 ? 'success' : pct > 0 ? 'primary' : 'muted';
@@ -152,7 +153,7 @@ function SubCategoryNode({
   };
 
   return (
-    <div>
+    <div style={{ contentVisibility: 'auto', containIntrinsicSize: '44px' } as any}>
       <div
         className={`w-full flex items-center gap-2 pr-2 py-2.5 text-left transition-colors rounded-lg hover:bg-secondary/60 ${
           depth === 0 ? 'font-semibold text-sm' : depth === 1 ? 'font-medium text-sm' : 'text-xs text-muted-foreground'
@@ -213,32 +214,117 @@ function SubCategoryNode({
         )}
       </div>
 
-      <AnimatePresence>
-        {isOpen && hasChildren && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            {node.children!.map(child => (
-              <SubCategoryNode
-                key={child.id}
-                node={child}
-                depth={depth + 1}
-                path={currentPath}
-                categoryId={categoryId}
-                entries={entries}
-                onLogLeaf={onLogLeaf}
-                onLogAll={onLogAll}
-                onUnlogAll={onUnlogAll}
-              />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {isOpen && hasChildren && (
+        <NodeChildren
+          children={node.children!}
+          depth={depth + 1}
+          path={currentPath}
+          categoryId={categoryId}
+          completed={completed}
+          onLogLeaf={onLogLeaf}
+          onLogAll={onLogAll}
+          onUnlogAll={onUnlogAll}
+        />
+      )}
     </div>
+  );
+});
+
+const LEAF_ROW_HEIGHT = 44;
+const VIRTUALIZE_THRESHOLD = 50;
+const MAX_VIRT_LIST_HEIGHT = 400;
+
+interface ChildRowProps {
+  items: SubCategory[];
+  depth: number;
+  path: string[];
+  categoryId: string;
+  completed: Set<string>;
+  onLogLeaf: (unitLabel: string) => void;
+  onLogAll: (node: SubCategory, path: string[]) => void;
+  onUnlogAll: (node: SubCategory, path: string[]) => void;
+}
+
+function ChildRow({ index, style, items, depth, path, categoryId, completed, onLogLeaf, onLogAll, onUnlogAll }: RowComponentProps<ChildRowProps>) {
+  return (
+    <div style={style}>
+      <SubCategoryNode
+        node={items[index]}
+        depth={depth}
+        path={path}
+        categoryId={categoryId}
+        completed={completed}
+        onLogLeaf={onLogLeaf}
+        onLogAll={onLogAll}
+        onUnlogAll={onUnlogAll}
+      />
+    </div>
+  );
+}
+
+function NodeChildren({
+  children,
+  depth,
+  path,
+  categoryId,
+  completed,
+  onLogLeaf,
+  onLogAll,
+  onUnlogAll,
+}: {
+  children: SubCategory[];
+  depth: number;
+  path: string[];
+  categoryId: string;
+  completed: Set<string>;
+  onLogLeaf: (unitLabel: string) => void;
+  onLogAll: (node: SubCategory, path: string[]) => void;
+  onUnlogAll: (node: SubCategory, path: string[]) => void;
+}) {
+  const allLeaves = useMemo(
+    () => children.every(c => !c.children || c.children.length === 0),
+    [children]
+  );
+  const shouldVirtualize = allLeaves && children.length > VIRTUALIZE_THRESHOLD;
+
+  if (shouldVirtualize) {
+    const height = Math.min(MAX_VIRT_LIST_HEIGHT, children.length * LEAF_ROW_HEIGHT);
+    return (
+      <List
+        rowComponent={ChildRow}
+        rowCount={children.length}
+        rowHeight={LEAF_ROW_HEIGHT}
+        style={{ height }}
+        rowProps={{
+          items: children,
+          depth,
+          path,
+          categoryId,
+          completed,
+          onLogLeaf,
+          onLogAll,
+          onUnlogAll,
+        }}
+      />
+    );
+  }
+
+  return (
+    <>
+      {children.map(child => (
+        <SubCategoryNode
+          key={child.id}
+          node={child}
+          depth={depth}
+          path={path}
+          categoryId={categoryId}
+          completed={completed}
+          onLogLeaf={onLogLeaf}
+          onLogAll={onLogAll}
+          onUnlogAll={onUnlogAll}
+        />
+      ))}
+    </>
   );
 }
 
@@ -250,7 +336,8 @@ export function SubCategoryBrowser({ subcategories, categoryName, categoryId }: 
   const navigate = useNavigate();
   const { entries, addEntries, setEntries } = useEntries();
   const { categories } = useCategories();
-  const { t, tn } = useI18n();
+  const completed = useCompletedUnits();
+  const { tn } = useI18n();
 
   const handleLogLeaf = (unitLabel: string) => {
     const params = new URLSearchParams({ category: categoryId, unit: unitLabel });
@@ -266,8 +353,7 @@ export function SubCategoryBrowser({ subcategories, categoryName, categoryId }: 
     const today = new Date().toISOString().split('T')[0];
     const nowIso = new Date().toISOString();
 
-    // Skip leaves that are already fully complete.
-    const labelsToLog = labels.filter(label => getLeafProgress(entries, categoryId, label) < 1);
+    const labelsToLog = labels.filter(label => !completed.has(normalizeUnitKey(label, categoryId)));
     if (labelsToLog.length === 0) {
       toast.info('Already fully logged');
       return;
@@ -278,7 +364,7 @@ export function SubCategoryBrowser({ subcategories, categoryName, categoryId }: 
       const components: LearningComponent[] = compNames.map((name, idx) => ({
         id: generateId(),
         name,
-        learned: idx === 0, // only first component marks the item as learned
+        learned: idx === 0,
         reviewed: false,
         reviewCount: 0,
         notes: '',
@@ -323,8 +409,10 @@ export function SubCategoryBrowser({ subcategories, categoryName, categoryId }: 
           <SubCategoryNode
             key={node.id}
             node={node}
+            depth={0}
+            path={[]}
             categoryId={categoryId}
-            entries={entries}
+            completed={completed}
             onLogLeaf={handleLogLeaf}
             onLogAll={handleLogAll}
             onUnlogAll={handleUnlogAll}
