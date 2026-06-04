@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useCategories, useEntries } from '@/lib/store';
+import { useCategories, useCompletedUnits } from '@/lib/store';
 import { ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { SubCategoryBrowser, getCategoryProgress } from '@/components/SubCategoryBrowser';
 import { useI18n } from '@/lib/i18n';
 
@@ -9,7 +8,7 @@ const EXPANDED_CAT_KEY = 'torahTracker_expandedCat';
 
 export default function Categories() {
   const { categories } = useCategories();
-  const { entries } = useEntries();
+  const completed = useCompletedUnits();
   const [expandedCat, setExpandedCat] = useState<string | null>(() => {
     try { return sessionStorage.getItem(EXPANDED_CAT_KEY); } catch { return null; }
   });
@@ -29,15 +28,14 @@ export default function Categories() {
           const hasSubs = !!(cat.subcategories && cat.subcategories.length > 0);
           const isOpen = expandedCat === cat.id;
           const progress = hasSubs
-            ? getCategoryProgress(cat.subcategories!, cat.id, entries)
+            ? getCategoryProgress(cat.subcategories!, cat.id, completed)
             : { fraction: 0, leafCount: 0, completedLeaves: 0 };
           const pct = Math.round(progress.fraction * 100);
           const tone = pct >= 100 ? 'bg-success' : pct > 0 ? 'bg-primary' : 'bg-muted-foreground/30';
 
           return (
             <div key={cat.id}>
-              <motion.div
-                layout
+              <div
                 role={hasSubs ? 'button' : undefined}
                 tabIndex={hasSubs ? 0 : undefined}
                 onClick={() => hasSubs && setExpandedCat(isOpen ? null : cat.id)}
@@ -72,25 +70,17 @@ export default function Categories() {
                     </span>
                   </div>
                 )}
-              </motion.div>
+              </div>
 
-              <AnimatePresence>
-                {isOpen && cat.subcategories && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                    className="overflow-hidden mt-2"
-                  >
-                    <SubCategoryBrowser
-                      subcategories={cat.subcategories}
-                      categoryName={cat.name}
-                      categoryId={cat.id}
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {isOpen && cat.subcategories && (
+                <div className="mt-2">
+                  <SubCategoryBrowser
+                    subcategories={cat.subcategories}
+                    categoryName={cat.name}
+                    categoryId={cat.id}
+                  />
+                </div>
+              )}
             </div>
           );
         })}
