@@ -264,6 +264,28 @@ export function unitsMatch(savedUnit: string, targetUnit: string, categoryId: st
   return false;
 }
 
+// Canonical key used by the completed-units index. Mirrors `unitsMatch` semantics.
+export function normalizeUnitKey(unit: string, categoryId: string): string {
+  let s = normalizeUnitLabel(unit);
+  if (categoryId === 'gemara') s = s.replace(/\bdaf\s+/g, '');
+  return `${categoryId}\u0000${s}`;
+}
+
+// True if an entry counts as "completed" for the unit (drives progress bars).
+export function isEntryCompleted(e: LearningEntry): boolean {
+  if (e.components.length === 0) return true;
+  return !!e.components[0]?.learned;
+}
+
+// Build the completed-units Set from an entries array. Used by tests and SSR-style code.
+export function buildCompletedSet(entries: LearningEntry[]): Set<string> {
+  const s = new Set<string>();
+  for (const e of entries) {
+    if (isEntryCompleted(e)) s.add(normalizeUnitKey(e.unit, e.categoryId));
+  }
+  return s;
+}
+
 export function findLatestEntryForUnit(
   entries: LearningEntry[],
   categoryId: string,
@@ -679,6 +701,19 @@ export function useEntries() {
     removeEntry: d.removeEntry,
     setEntries: d.setEntriesAll,
   };
+}
+
+// Fast O(1) lookup for "is this unit completed?".
+// Built once per change to entries, reused across all progress bars.
+export function useCompletedUnits(): Set<string> {
+  const d = useData();
+  return useMemo(() => {
+    const s = new Set<string>();
+    for (const e of d.entries) {
+      if (isEntryCompleted(e)) s.add(normalizeUnitKey(e.unit, e.categoryId));
+    }
+    return s;
+  }, [d.entries]);
 }
 
 export function useGoals() {

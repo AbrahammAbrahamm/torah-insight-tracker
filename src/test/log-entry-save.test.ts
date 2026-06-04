@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { getNodeProgress } from '@/components/SubCategoryBrowser';
-import { finalizeComponentsForSave, findLatestEntryForUnit, upsertEntryForUnit } from '@/lib/store';
+import { finalizeComponentsForSave, findLatestEntryForUnit, upsertEntryForUnit, buildCompletedSet } from '@/lib/store';
 import type { LearningEntry, LearningComponent } from '@/lib/store';
 import type { SubCategory } from '@/lib/category-structures';
 
@@ -59,7 +59,7 @@ describe('LogEntry save → progress', () => {
     // Save logic should have promoted the first component to learned.
     expect(entry.components[0].learned).toBe(true);
 
-    const progress = getNodeProgress(leafNode, 'gemara', masechtaPath, [entry]);
+    const progress = getNodeProgress(leafNode, 'gemara', masechtaPath, buildCompletedSet([entry]));
     expect(progress.fraction).toBe(1);
     expect(progress.completedLeaves).toBe(1);
   });
@@ -74,7 +74,7 @@ describe('LogEntry save → progress', () => {
         comp('Rashi'),
       ],
     });
-    const progress = getNodeProgress(leafNode, 'gemara', masechtaPath, [entry]);
+    const progress = getNodeProgress(leafNode, 'gemara', masechtaPath, buildCompletedSet([entry]));
     expect(progress.fraction).toBe(1);
   });
 
@@ -89,7 +89,7 @@ describe('LogEntry save → progress', () => {
       ],
     });
     expect(entry.components[0].learned).toBe(false);
-    const progress = getNodeProgress(leafNode, 'gemara', masechtaPath, [entry]);
+    const progress = getNodeProgress(leafNode, 'gemara', masechtaPath, buildCompletedSet([entry]));
     expect(progress.fraction).toBe(0);
   });
 });
@@ -168,7 +168,7 @@ describe('LogEntry save → entry persistence', () => {
 
     // And it should be reflected in progress calculations elsewhere.
     const leafNode: SubCategory = { id: '2a', name: '2a (Amud Aleph)', totalUnits: 1 };
-    const progress = getNodeProgress(leafNode, 'gemara', ['Seder Zeraim', 'Berachos'], loaded);
+    const progress = getNodeProgress(leafNode, 'gemara', ['Seder Zeraim', 'Berachos'], buildCompletedSet(loaded));
     expect(progress.fraction).toBe(1);
   });
 
@@ -194,7 +194,7 @@ describe('LogEntry save → entry persistence', () => {
     expect(reopened?.components[0].reviewCount).toBe(2);
 
     const leafNode: SubCategory = { id: '2a', name: 'Daf 2a (Amud Aleph)', totalUnits: 1 };
-    const progress = getNodeProgress(leafNode, 'gemara', ['Seder Moed', 'Shabbos'], loaded);
+    const progress = getNodeProgress(leafNode, 'gemara', ['Seder Moed', 'Shabbos'], buildCompletedSet(loaded));
     expect(progress.fraction).toBe(1);
     expect(progress.completedLeaves).toBe(1);
   });
