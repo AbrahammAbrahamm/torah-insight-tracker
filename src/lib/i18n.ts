@@ -242,12 +242,31 @@ export function translateName(name: string, lang: Language): string {
   if (m4b) return `סעיף קטן ${numberToGematria(parseInt(m4b[1], 10))}`;
   const m5 = name.match(/^Pasuk (\d+)$/);
   if (m5) return `פסוק ${numberToGematria(parseInt(m5[1], 10))}`;
+  const mShaar = name.match(/^Shaar (\d+)$/);
+  if (mShaar) return `שער ${numberToGematria(parseInt(mShaar[1], 10))}`;
+  const mTorah = name.match(/^Torah (\d+)$/);
+  if (mTorah) return `תורה ${numberToGematria(parseInt(mTorah[1], 10))}`;
+  const mParsha = name.match(/^Parsha (\d+)$/);
+  if (mParsha) return `פרשה ${numberToGematria(parseInt(mParsha[1], 10))}`;
+  const mVolume = name.match(/^Volume (\d+)$/);
+  if (mVolume) return `כרך ${numberToGematria(parseInt(mVolume[1], 10))}`;
+  const mMonth = name.match(/^Month (\d+)$/);
+  if (mMonth) return `חודש ${numberToGematria(parseInt(mMonth[1], 10))}`;
+  const mSection = name.match(/^Section (\d+)$/);
+  if (mSection) return `חלק ${numberToGematria(parseInt(mSection[1], 10))}`;
+  const mDay = name.match(/^Day (\d+)$/);
+  if (mDay) return `יום ${numberToGematria(parseInt(mDay[1], 10))}`;
   // "Daf 2a (Amud Aleph)" or "Daf 2"
   const m6 = name.match(/^Daf (\d+)([ab])?\s*(?:\(.*\))?$/);
   if (m6) {
     const numLetters = numberToGematria(parseInt(m6[1], 10));
     const amud = m6[2] === 'a' ? ' ע״א' : m6[2] === 'b' ? ' ע״ב' : '';
     return `דף ${numLetters}${amud}`;
+  }
+  // "<Halacha name> <number>" used in Rambam Yomi day children
+  const m7 = name.match(/^(.+) (\d+)$/);
+  if (m7 && HEBREW_NAMES[m7[1]]) {
+    return `${HEBREW_NAMES[m7[1]]} ${numberToGematria(parseInt(m7[2], 10))}`;
   }
   return name;
 }
