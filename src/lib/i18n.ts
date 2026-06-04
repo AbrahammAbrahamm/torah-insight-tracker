@@ -219,7 +219,7 @@ export const HEBREW_NAMES: Record<string, string> = {
   'Ishut': 'אישות', 'Gerushin': 'גירושין', 'Yibbum vaChalitzah': 'יבום וחליצה',
   "Na'arah Betulah": 'נערה בתולה',
   'Issurei Biah': 'איסורי ביאה', 'Maachalot Asurot': 'מאכלות אסורות', 'Shechitah': 'שחיטה',
-  'Shevuot': 'שבועות', 'Nedarim': 'נדרים', 'Nezirut': 'נזירות',
+  'Shevuot': 'שבועות', 'Nezirut': 'נזירות',
   'Erechin vaCharamin': 'ערכין וחרמין',
   'Matnot Aniyim': 'מתנות עניים', 'Terumot': 'תרומות',
   "Ma'aser": 'מעשר',
