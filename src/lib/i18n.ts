@@ -305,8 +305,19 @@ export function numberToGematria(n: number): string {
 
 // Translate a category/subcategory display name. In 'en', returns as-is.
 // In 'he' or 'mixed', tries the dictionary, then translates patterns.
+const TRANSLATE_CACHE = new Map<string, string>();
 export function translateName(name: string, lang: Language): string {
   if (lang === 'en') return name;
+  const cacheKey = lang + '\u0000' + name;
+  const cached = TRANSLATE_CACHE.get(cacheKey);
+  if (cached !== undefined) return cached;
+  const result = computeTranslateName(name, lang);
+  if (TRANSLATE_CACHE.size > 5000) TRANSLATE_CACHE.clear();
+  TRANSLATE_CACHE.set(cacheKey, result);
+  return result;
+}
+
+function computeTranslateName(name: string, lang: Language): string {
   if (HEBREW_NAMES[name]) return HEBREW_NAMES[name];
   // Generic patterns — convert numbers to gematria letters
   const m1 = name.match(/^Perek (\d+)$/);
