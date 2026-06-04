@@ -694,6 +694,19 @@ export function useEntries() {
   };
 }
 
+// Fast O(1) lookup for "is this unit completed?".
+// Built once per change to entries, reused across all progress bars.
+export function useCompletedUnits(): Set<string> {
+  const d = useData();
+  return useMemo(() => {
+    const s = new Set<string>();
+    for (const e of d.entries) {
+      if (isEntryCompleted(e)) s.add(normalizeUnitKey(e.unit, e.categoryId));
+    }
+    return s;
+  }, [d.entries]);
+}
+
 export function useGoals() {
   const d = useData();
   return {
