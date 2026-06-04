@@ -185,7 +185,86 @@ export const HEBREW_NAMES: Record<string, string> = {
   'Shir HaShirim': 'שיר השירים', 'Rus': 'רות', 'Eichah': 'איכה', 'Koheles': 'קהלת',
   'Esther': 'אסתר', 'Daniel': 'דניאל', 'Ezra': 'עזרא', 'Nechemiah': 'נחמיה',
   'Divrei HaYamim I': 'דברי הימים א', 'Divrei HaYamim II': 'דברי הימים ב',
+  // Rambam / Mussar / Chasidus top-level
+  'Rambam': 'רמב"ם',
+  'Mussar / Chasidus': 'מוסר / חסידות',
+  'Mussar': 'מוסר',
+  'Chasidus': 'חסידות',
+  // Rambam books (Sefer ...)
+  'Sefer HaMadda': 'ספר המדע',
+  'Sefer Ahavah': 'ספר אהבה',
+  'Sefer Zmanim': 'ספר זמנים',
+  'Sefer Nashim': 'ספר נשים',
+  'Sefer Kedushah': 'ספר קדושה',
+  "Sefer Hafla'ah": 'ספר הפלאה',
+  'Sefer Zeraim': 'ספר זרעים',
+  'Sefer Avodah': 'ספר עבודה',
+  'Sefer Korbanot': 'ספר קרבנות',
+  'Sefer Taharah': 'ספר טהרה',
+  'Sefer Nezikin': 'ספר נזיקין',
+  'Sefer Kinyan': 'ספר קנין',
+  'Sefer Mishpatim': 'ספר משפטים',
+  'Sefer Shoftim': 'ספר שופטים',
+  // Rambam halachot (hilchot ...) — entries already in HEBREW_NAMES are reused
+  'Yesodei HaTorah': 'יסודי התורה', "De'ot": 'דעות', 'Talmud Torah': 'תלמוד תורה',
+  'Teshuvah': 'תשובה',
+  "Kri'at Shema": 'קריאת שמע', 'Tefillah': 'תפילה',
+  'Tefillin Mezuzah veSefer Torah': 'תפילין מזוזה וספר תורה', 'Tzitzit': 'ציצית',
+  'Berachot': 'ברכות', 'Milah': 'מילה', 'Seder Tefillot': 'סדר תפילות',
+  'Shabbat': 'שבת', 'Shevitat Asor': 'שביתת עשור',
+  'Shevitat Yom Tov': 'שביתת יום טוב', 'Chametz uMatzah': 'חמץ ומצה',
+  'Shofar veSukkah veLulav': 'שופר וסוכה ולולב',
+  'Kiddush HaChodesh': 'קידוש החודש', 'Taaniyot': 'תעניות',
+  'Megillah veChanukah': 'מגילה וחנוכה',
+  'Ishut': 'אישות', 'Gerushin': 'גירושין', 'Yibbum vaChalitzah': 'יבום וחליצה',
+  "Na'arah Betulah": 'נערה בתולה',
+  'Issurei Biah': 'איסורי ביאה', 'Maachalot Asurot': 'מאכלות אסורות', 'Shechitah': 'שחיטה',
+  'Shevuot': 'שבועות', 'Nezirut': 'נזירות',
+  'Erechin vaCharamin': 'ערכין וחרמין',
+  'Matnot Aniyim': 'מתנות עניים', 'Terumot': 'תרומות',
+  "Ma'aser": 'מעשר',
+  'Shemittah veYovel': 'שמיטה ויובל',
+  'Beit HaBechirah': 'בית הבחירה', 'Kli HaMikdash': 'כלי המקדש',
+  'Biat HaMikdash': 'ביאת המקדש', 'Issurei Mizbeach': 'איסורי מזבח',
+  'Maaseh HaKorbanot': 'מעשה הקרבנות', 'Temidin uMusafin': 'תמידין ומוספין',
+  'Pesulei HaMukdashin': 'פסולי המוקדשין', 'Avodat Yom HaKippurim': 'עבודת יום הכיפורים',
+  "Me'ilah": 'מעילה',
+  'Korban Pesach': 'קרבן פסח', 'Bechorot': 'בכורות',
+  'Shegagot': 'שגגות', 'Mechusrei Kapparah': 'מחוסרי כפרה',
+  'Tumat Met': 'טומאת מת', 'Parah Adumah': 'פרה אדומה',
+  "Tumat Tzara'at": 'טומאת צרעת', 'Metamei Mishkav uMoshav': 'מטמאי משכב ומושב',
+  "She'ar Avot HaTumot": 'שאר אבות הטומאות', 'Tumat Ochalin': 'טומאת אוכלין',
+  'Kelim': 'כלים', 'Mikvaot': 'מקוואות',
+  'Nizkei Mamon': 'נזקי ממון', 'Genevah': 'גניבה',
+  "Gezelah va'Avedah": 'גזילה ואבידה', 'Chovel uMazik': 'חובל ומזיק',
+  'Rotzeach uShmirat Nefesh': 'רוצח ושמירת נפש',
+  'Mechirah': 'מכירה', 'Zechiyah uMatanah': 'זכייה ומתנה',
+  'Shecheinim': 'שכנים', 'Shluchin veShutfin': 'שלוחין ושותפין', 'Avadim': 'עבדים',
+  'Sechirut': 'שכירות', "She'elah uPikadon": 'שאלה ופקדון',
+  'Malveh veLoveh': 'מלוה ולוה', "Toen veNit'an": 'טוען ונטען', 'Nachalot': 'נחלות',
+  'Edut': 'עדות', 'Mamrim': 'ממרים',
+  'Evel': 'אבל', 'Melachim uMilchamot': 'מלכים ומלחמות',
+  // Mussar / Chasidus seforim
+  'Mesilas Yesharim': 'מסילת ישרים',
+  'Shaarei Teshuvah': 'שערי תשובה',
+  'Chovos HaLevavos': 'חובות הלבבות',
+  'Orchos Tzaddikim': 'ארחות צדיקים',
+  'Pirkei Avos': 'פרקי אבות',
+  'Michtav MeEliyahu': 'מכתב מאליהו',
+  'Sefer HaYashar': 'ספר הישר',
+  'Tomer Devorah': 'תומר דבורה',
+  'Shemiras HaLashon': 'שמירת הלשון',
+  'Sefer Chofetz Chaim': 'ספר חפץ חיים',
+  'Tanya': 'תניא',
+  'Likutei Moharan': 'ליקוטי מוהר"ן',
+  'Noam Elimelech': 'נועם אלימלך',
+  'Kedushas Levi': 'קדושת לוי',
+  'Sfas Emes': 'שפת אמת',
+  "Me'or Einayim": 'מאור עינים',
+  'Derech Hashem': 'דרך השם',
+  'Bnei Yissaschar': 'בני יששכר',
 };
+
 
 // Convert a positive integer to its Hebrew gematria representation.
 // Handles 1..9999. Inserts geresh/gershayim per convention.
@@ -242,12 +321,31 @@ export function translateName(name: string, lang: Language): string {
   if (m4b) return `סעיף קטן ${numberToGematria(parseInt(m4b[1], 10))}`;
   const m5 = name.match(/^Pasuk (\d+)$/);
   if (m5) return `פסוק ${numberToGematria(parseInt(m5[1], 10))}`;
+  const mShaar = name.match(/^Shaar (\d+)$/);
+  if (mShaar) return `שער ${numberToGematria(parseInt(mShaar[1], 10))}`;
+  const mTorah = name.match(/^Torah (\d+)$/);
+  if (mTorah) return `תורה ${numberToGematria(parseInt(mTorah[1], 10))}`;
+  const mParsha = name.match(/^Parsha (\d+)$/);
+  if (mParsha) return `פרשה ${numberToGematria(parseInt(mParsha[1], 10))}`;
+  const mVolume = name.match(/^Volume (\d+)$/);
+  if (mVolume) return `כרך ${numberToGematria(parseInt(mVolume[1], 10))}`;
+  const mMonth = name.match(/^Month (\d+)$/);
+  if (mMonth) return `חודש ${numberToGematria(parseInt(mMonth[1], 10))}`;
+  const mSection = name.match(/^Section (\d+)$/);
+  if (mSection) return `חלק ${numberToGematria(parseInt(mSection[1], 10))}`;
+  const mDay = name.match(/^Day (\d+)$/);
+  if (mDay) return `יום ${numberToGematria(parseInt(mDay[1], 10))}`;
   // "Daf 2a (Amud Aleph)" or "Daf 2"
   const m6 = name.match(/^Daf (\d+)([ab])?\s*(?:\(.*\))?$/);
   if (m6) {
     const numLetters = numberToGematria(parseInt(m6[1], 10));
     const amud = m6[2] === 'a' ? ' ע״א' : m6[2] === 'b' ? ' ע״ב' : '';
     return `דף ${numLetters}${amud}`;
+  }
+  // "<Halacha name> <number>" used in Rambam Yomi day children
+  const m7 = name.match(/^(.+) (\d+)$/);
+  if (m7 && HEBREW_NAMES[m7[1]]) {
+    return `${HEBREW_NAMES[m7[1]]} ${numberToGematria(parseInt(m7[2], 10))}`;
   }
   return name;
 }
