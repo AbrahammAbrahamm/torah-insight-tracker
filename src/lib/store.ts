@@ -264,6 +264,19 @@ export function unitsMatch(savedUnit: string, targetUnit: string, categoryId: st
   return false;
 }
 
+// Canonical key used by the completed-units index. Mirrors `unitsMatch` semantics.
+export function normalizeUnitKey(unit: string, categoryId: string): string {
+  let s = normalizeUnitLabel(unit);
+  if (categoryId === 'gemara') s = s.replace(/\bdaf\s+/g, '');
+  return `${categoryId}\u0000${s}`;
+}
+
+// True if an entry counts as "completed" for the unit (drives progress bars).
+export function isEntryCompleted(e: LearningEntry): boolean {
+  if (e.components.length === 0) return true;
+  return !!e.components[0]?.learned;
+}
+
 export function findLatestEntryForUnit(
   entries: LearningEntry[],
   categoryId: string,
