@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useCategories, StudyCategory } from '@/lib/store';
 import { Plus, Pencil, Trash2, X, Check } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { useI18n } from '@/lib/i18n';
 
 const ICONS = ['📜', '📖', '📕', '📗', '📘', '📙', '⚖️', '🕯️', '✡️', '🔖', '📚', '🎓'];
@@ -92,105 +92,98 @@ export function CategoryManager() {
         </button>
       </div>
 
-      <AnimatePresence>
-        {showForm && (
-          <motion.div
-            className="bg-card border rounded-xl p-4 mb-3"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-          >
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Name</label>
-                <input
-                  className="w-full mt-1 px-3 py-2 bg-background border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  value={form.name}
-                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="e.g., Gemara, Mishnayos..."
-                />
-              </div>
+      {showForm && (
+        <div className="bg-card border rounded-xl p-4 mb-3 animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Name</label>
+              <input
+                className="w-full mt-1 px-3 py-2 bg-background border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                value={form.name}
+                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="e.g., Gemara, Mishnayos..."
+              />
+            </div>
 
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Icon</label>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {ICONS.map(icon => (
-                    <button
-                      key={icon}
-                      type="button"
-                      className={`text-xl p-1.5 rounded-lg border transition-colors ${form.icon === icon ? 'bg-primary/10 border-primary' : 'border-transparent'}`}
-                      onClick={() => setForm(f => ({ ...f, icon }))}
-                    >
-                      {icon}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">Unit Type</label>
-                  <select
-                    className="w-full mt-1 px-3 py-2 bg-background border rounded-lg text-sm"
-                    value={form.unitType}
-                    onChange={e => setForm(f => ({ ...f, unitType: e.target.value }))}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Icon</label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {ICONS.map(icon => (
+                  <button
+                    key={icon}
+                    type="button"
+                    className={`text-xl p-1.5 rounded-lg border transition-colors ${form.icon === icon ? 'bg-primary/10 border-primary' : 'border-transparent'}`}
+                    onClick={() => setForm(f => ({ ...f, icon }))}
                   >
-                    {UNIT_TYPES.map(u => <option key={u} value={u}>{u}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">Structure</label>
-                  <select
-                    className="w-full mt-1 px-3 py-2 bg-background border rounded-lg text-sm"
-                    value={form.structure}
-                    onChange={e => setForm(f => ({
-                      ...f,
-                      structure: e.target.value as 'gemara' | 'tanach' | 'custom',
-                      trackByLines: e.target.value === 'gemara',
-                    }))}
-                  >
-                    {STRUCTURES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              {!isPreset && (
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">Default Components (comma-separated)</label>
-                  <input
-                    className="w-full mt-1 px-3 py-2 bg-background border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                    value={form.defaultComponents}
-                    onChange={e => setForm(f => ({ ...f, defaultComponents: e.target.value }))}
-                    placeholder="e.g., Rashi, Tosfos, Ramban"
-                  />
-                </div>
-              )}
-
-              {!isPreset && (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="trackByLines"
-                    checked={form.trackByLines}
-                    onChange={e => setForm(f => ({ ...f, trackByLines: e.target.checked }))}
-                    className="rounded"
-                  />
-                  <label htmlFor="trackByLines" className="text-sm text-muted-foreground">Track by lines</label>
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <button onClick={handleSave} className="flex-1 flex items-center justify-center gap-1.5 bg-primary text-primary-foreground rounded-lg py-2 text-sm font-medium">
-                  <Check className="w-4 h-4" /> {editId ? 'Update' : 'Create'}
-                </button>
-                <button onClick={resetForm} className="px-4 py-2 text-sm text-muted-foreground border rounded-lg">
-                  <X className="w-4 h-4" />
-                </button>
+                    {icon}
+                  </button>
+                ))}
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Unit Type</label>
+                <select
+                  className="w-full mt-1 px-3 py-2 bg-background border rounded-lg text-sm"
+                  value={form.unitType}
+                  onChange={e => setForm(f => ({ ...f, unitType: e.target.value }))}
+                >
+                  {UNIT_TYPES.map(u => <option key={u} value={u}>{u}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Structure</label>
+                <select
+                  className="w-full mt-1 px-3 py-2 bg-background border rounded-lg text-sm"
+                  value={form.structure}
+                  onChange={e => setForm(f => ({
+                    ...f,
+                    structure: e.target.value as 'gemara' | 'tanach' | 'custom',
+                    trackByLines: e.target.value === 'gemara',
+                  }))}
+                >
+                  {STRUCTURES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {!isPreset && (
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Default Components (comma-separated)</label>
+                <input
+                  className="w-full mt-1 px-3 py-2 bg-background border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  value={form.defaultComponents}
+                  onChange={e => setForm(f => ({ ...f, defaultComponents: e.target.value }))}
+                  placeholder="e.g., Rashi, Tosfos, Ramban"
+                />
+              </div>
+            )}
+
+            {!isPreset && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="trackByLines"
+                  checked={form.trackByLines}
+                  onChange={e => setForm(f => ({ ...f, trackByLines: e.target.checked }))}
+                  className="rounded"
+                />
+                <label htmlFor="trackByLines" className="text-sm text-muted-foreground">Track by lines</label>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button onClick={handleSave} className="flex-1 flex items-center justify-center gap-1.5 bg-primary text-primary-foreground rounded-lg py-2 text-sm font-medium">
+                <Check className="w-4 h-4" /> {editId ? 'Update' : 'Create'}
+              </button>
+              <button onClick={resetForm} className="px-4 py-2 text-sm text-muted-foreground border rounded-lg">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-2">
         {categories.map(cat => (
