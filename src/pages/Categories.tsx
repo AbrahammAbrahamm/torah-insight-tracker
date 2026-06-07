@@ -34,7 +34,11 @@ export default function Categories() {
           const tone = pct >= 100 ? 'bg-success' : pct > 0 ? 'bg-primary' : 'bg-muted-foreground/30';
 
           return (
-            <div key={cat.id}>
+            <div
+              key={cat.id}
+              className="animate-fade-in"
+              style={{ contentVisibility: 'auto', containIntrinsicSize: '120px' } as React.CSSProperties}
+            >
               <div
                 role={hasSubs ? 'button' : undefined}
                 tabIndex={hasSubs ? 0 : undefined}
