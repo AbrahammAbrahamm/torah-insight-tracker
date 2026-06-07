@@ -29,10 +29,21 @@ export function applyRambamStructure(cats: StudyCategory[], style: 'books' | 'yo
   });
 }
 
+const MUSSAR_STRUCTURE_CACHE = new Map<string, SubCategory[]>();
+function getCachedMussarStructure(enabledIds: string[]): SubCategory[] {
+  const key = [...enabledIds].sort().join('|');
+  let cached = MUSSAR_STRUCTURE_CACHE.get(key);
+  if (!cached) {
+    cached = buildMussarStructure(enabledIds);
+    MUSSAR_STRUCTURE_CACHE.set(key, cached);
+  }
+  return cached;
+}
+
 export function applyMussarStructure(cats: StudyCategory[], enabledIds: string[]): StudyCategory[] {
   return cats.map(c => {
     if (c.id !== 'mussar-chasidus') return c;
-    return { ...c, subcategories: buildMussarStructure(enabledIds) };
+    return { ...c, subcategories: getCachedMussarStructure(enabledIds) };
   });
 }
 
@@ -241,8 +252,40 @@ function loadFromStorage<T>(key: string, fallback: T): T {
   }
 }
 
+const PENDING_WRITES = new Map<string, unknown>();
+const WRITE_TIMERS = new Map<string, ReturnType<typeof setTimeout>>();
+const ric: (cb: () => void) => void =
+  typeof (globalThis as any).requestIdleCallback === 'function'
+    ? (cb) => (globalThis as any).requestIdleCallback(cb, { timeout: 1000 })
+    : (cb) => setTimeout(cb, 0);
+
+function flushWrite(key: string) {
+  if (!PENDING_WRITES.has(key)) return;
+  const value = PENDING_WRITES.get(key);
+  PENDING_WRITES.delete(key);
+  WRITE_TIMERS.delete(key);
+  ric(() => {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+  });
+}
+
 function saveToStorage<T>(key: string, value: T): void {
-  localStorage.setItem(key, JSON.stringify(value));
+  PENDING_WRITES.set(key, value);
+  const existing = WRITE_TIMERS.get(key);
+  if (existing) clearTimeout(existing);
+  WRITE_TIMERS.set(key, setTimeout(() => flushWrite(key), 300));
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', () => {
+    for (const key of Array.from(PENDING_WRITES.keys())) {
+      const t = WRITE_TIMERS.get(key);
+      if (t) clearTimeout(t);
+      try { localStorage.setItem(key, JSON.stringify(PENDING_WRITES.get(key))); } catch {}
+      PENDING_WRITES.delete(key);
+      WRITE_TIMERS.delete(key);
+    }
+  });
 }
 
 export function normalizeUnitLabel(value: string): string {
