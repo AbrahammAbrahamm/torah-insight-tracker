@@ -153,7 +153,7 @@ const SubCategoryNode = memo(function SubCategoryNode({
   };
 
   return (
-    <div style={{ contentVisibility: 'auto', containIntrinsicSize: '44px' } as any}>
+    <div style={{ contentVisibility: 'auto', containIntrinsicSize: '52px' } as any}>
       <div
         className={`w-full flex items-center gap-3 pr-3 py-3 text-left transition-colors rounded-lg hover:bg-secondary/60 ${
           depth === 0 ? 'font-semibold text-sm' : depth === 1 ? 'font-medium text-sm' : 'text-xs text-muted-foreground'
@@ -232,7 +232,7 @@ const SubCategoryNode = memo(function SubCategoryNode({
   );
 });
 
-const LEAF_ROW_HEIGHT = 44;
+const LEAF_ROW_HEIGHT = 52;
 const VIRTUALIZE_THRESHOLD = 50;
 const MAX_VIRT_LIST_HEIGHT = 400;
 
