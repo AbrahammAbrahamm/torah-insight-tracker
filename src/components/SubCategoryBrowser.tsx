@@ -192,11 +192,12 @@ const SubCategoryNode = memo(function SubCategoryNode({
               e.stopPropagation();
               onLogAll(node, path);
             }}
-            className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-success hover:bg-success/10"
+            className="shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-md text-[10px] font-medium text-muted-foreground hover:text-success hover:bg-success/10"
             title={hasChildren ? 'Log all below as learned' : 'Mark as learned'}
             aria-label={hasChildren ? 'Log all below as learned' : 'Mark as learned'}
           >
             <CheckCheck className="w-3.5 h-3.5" />
+            <span>{hasChildren ? 'All' : 'Log'}</span>
           </button>
         )}
         {pct > 0 && (
@@ -205,11 +206,12 @@ const SubCategoryNode = memo(function SubCategoryNode({
               e.stopPropagation();
               onUnlogAll(node, path);
             }}
-            className="shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            className="shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-md text-[10px] font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10"
             title={hasChildren ? 'Unlog all below' : 'Unlog'}
             aria-label={hasChildren ? 'Unlog all below' : 'Unlog'}
           >
             <X className="w-3.5 h-3.5" />
+            <span>{hasChildren ? 'Clear' : 'Undo'}</span>
           </button>
         )}
       </div>
