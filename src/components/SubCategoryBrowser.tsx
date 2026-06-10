@@ -155,7 +155,7 @@ const SubCategoryNode = memo(function SubCategoryNode({
   return (
     <div style={{ contentVisibility: 'auto', containIntrinsicSize: '44px' } as any}>
       <div
-        className={`w-full flex items-center gap-2 pr-2 py-2.5 text-left transition-colors rounded-lg hover:bg-secondary/60 ${
+        className={`w-full flex items-center gap-3 pr-3 py-3 text-left transition-colors rounded-lg hover:bg-secondary/60 ${
           depth === 0 ? 'font-semibold text-sm' : depth === 1 ? 'font-medium text-sm' : 'text-xs text-muted-foreground'
         }`}
         style={{ paddingLeft: `${(depth + 1) * 24}px` }}
@@ -166,20 +166,20 @@ const SubCategoryNode = memo(function SubCategoryNode({
         >
           {hasChildren ? (
             isOpen ? (
-              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
             ) : (
-              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
             )
           ) : pct >= 100 ? (
-            <CheckCircle2 className="w-3.5 h-3.5 text-success shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
           ) : (
-            <BookOpen className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
+            <BookOpen className="w-4 h-4 text-muted-foreground/50 shrink-0" />
           )}
           <span className={`flex-1 truncate ${pct >= 100 ? 'text-success' : ''}`}>{tn(node.name)}</span>
 
           <ProgressBar value={progress.fraction} tone={tone} />
           <span
-            className={`text-[10px] tabular-nums shrink-0 w-8 text-right ${
+            className={`text-xs tabular-nums shrink-0 w-10 text-right ${
               tone === 'success' ? 'text-success' : tone === 'primary' ? 'text-primary' : 'text-muted-foreground'
             }`}
           >
@@ -192,11 +192,11 @@ const SubCategoryNode = memo(function SubCategoryNode({
               e.stopPropagation();
               onLogAll(node, path);
             }}
-            className="shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-md text-[10px] font-medium text-muted-foreground hover:text-success hover:bg-success/10"
+            className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-success hover:bg-success/10 active:scale-95 transition-transform"
             title={hasChildren ? 'Log all below as learned' : 'Mark as learned'}
             aria-label={hasChildren ? 'Log all below as learned' : 'Mark as learned'}
           >
-            <CheckCheck className="w-3.5 h-3.5" />
+            <CheckCheck className="w-5 h-5" />
             <span>{hasChildren ? 'All' : 'Log'}</span>
           </button>
         )}
@@ -206,11 +206,11 @@ const SubCategoryNode = memo(function SubCategoryNode({
               e.stopPropagation();
               onUnlogAll(node, path);
             }}
-            className="shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-md text-[10px] font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 active:scale-95 transition-transform"
             title={hasChildren ? 'Unlog all below' : 'Unlog'}
             aria-label={hasChildren ? 'Unlog all below' : 'Unlog'}
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-5 h-5" />
             <span>{hasChildren ? 'Clear' : 'Undo'}</span>
           </button>
         )}
