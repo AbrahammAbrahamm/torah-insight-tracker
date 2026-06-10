@@ -197,7 +197,7 @@ const SubCategoryNode = memo(function SubCategoryNode({
             aria-label={hasChildren ? 'Log all below as learned' : 'Mark as learned'}
           >
             <CheckCheck className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{hasChildren ? 'All' : 'Log'}</span>
+            <span>{hasChildren ? 'All' : 'Log'}</span>
           </button>
         )}
         {pct > 0 && (
@@ -211,7 +211,7 @@ const SubCategoryNode = memo(function SubCategoryNode({
             aria-label={hasChildren ? 'Unlog all below' : 'Unlog'}
           >
             <X className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{hasChildren ? 'Clear' : 'Undo'}</span>
+            <span>{hasChildren ? 'Clear' : 'Undo'}</span>
           </button>
         )}
       </div>
